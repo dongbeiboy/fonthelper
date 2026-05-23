@@ -22,6 +22,15 @@ public sealed partial class SettingsPage : Page
         _loaded = true;
     }
 
+    private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (NavList.SelectedItem is ListViewItem item && item.Tag is string tag)
+        {
+            SettingsPanel.Visibility = tag == "settings" ? Visibility.Visible : Visibility.Collapsed;
+            AboutPanel.Visibility = tag == "about" ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
     private void OnSettingChanged(object sender, RoutedEventArgs e)
     {
         if (!_loaded) return;
