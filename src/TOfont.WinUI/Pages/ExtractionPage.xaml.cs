@@ -15,6 +15,7 @@ public sealed partial class ExtractionPage : Page
     private bool _isTextMode = true;
     private bool _isFontLibMode;
     private bool _isImportMode;
+    private bool _fontsLoaded;
     private byte[]? _currentDotData;
     private int _currentWidth;
     private int _currentHeight;
@@ -31,7 +32,11 @@ public sealed partial class ExtractionPage : Page
         ModeSwitch.ItemsSource = new[] { "文字取模", "图片取模", "字体库", "字库导入" };
         Loaded += (_, _) =>
         {
-            PopulateFonts();
+            if (!_fontsLoaded)
+            {
+                PopulateFonts();
+                _fontsLoaded = true;
+            }
             RenderEmptyGrid();
         };
         ActualThemeChanged += (_, _) => ReRender();

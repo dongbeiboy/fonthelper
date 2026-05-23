@@ -2,11 +2,13 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using TOfont.Core.Models;
 
 namespace TOfont.Core.Extraction;
 
+[SupportedOSPlatform("windows")]
 public class FontExtractor
 {
     public int FontSize { get; set; } = 16;

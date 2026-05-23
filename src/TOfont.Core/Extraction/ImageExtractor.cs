@@ -42,7 +42,7 @@ public class ImageExtractor
         var height = TargetHeight ?? source.Height;
 
         using var resized = source.Width != width || source.Height != height
-            ? source.Resize(new SKImageInfo(width, height), SKFilterQuality.Medium)
+            ? source.Resize(new SKImageInfo(width, height), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear))
             : source;
 
         var matrix = new DotMatrix(width, height);

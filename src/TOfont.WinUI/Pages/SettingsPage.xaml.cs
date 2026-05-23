@@ -24,6 +24,7 @@ public sealed partial class SettingsPage : Page
 
     private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (SettingsPanel == null || AboutPanel == null) return;
         if (NavList.SelectedItem is ListViewItem item && item.Tag is string tag)
         {
             SettingsPanel.Visibility = tag == "settings" ? Visibility.Visible : Visibility.Collapsed;

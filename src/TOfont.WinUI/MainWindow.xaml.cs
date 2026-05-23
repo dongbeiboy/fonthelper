@@ -1,6 +1,8 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using System.Runtime.InteropServices;
 using TOfont.WinUI.Pages;
 
 namespace TOfont.WinUI;
@@ -12,14 +14,18 @@ public sealed partial class MainWindow : Window
     private bool _isActive = true;
     private bool _isDark;
 
+    private HomePage? _homePage;
+    private ExtractionPage? _extractionPage;
+    private SettingsPage? _settingsPage;
+
     public MainWindow()
     {
         _current = this;
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
-        SystemBackdrop = new MicaBackdrop();
+        try { SystemBackdrop = new MicaBackdrop(); } catch { }
         ContentFrame.Navigate(typeof(HomePage));
-        ContentFrame.Navigated += OnFrameNavigated;
+        _homePage = ContentFrame.Content as HomePage;
         NavView.SelectedItem = NavView.MenuItems[0];
 
         var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
@@ -39,6 +45,7 @@ public sealed partial class MainWindow : Window
         {
             _isActive = args.WindowActivationState != Microsoft.UI.Xaml.WindowActivationState.Deactivated;
             UpdateTitleBar();
+            SetWindowIcon();
         };
     }
 
@@ -81,24 +88,25 @@ public sealed partial class MainWindow : Window
     {
         if (args.SelectedItem is NavigationViewItem item && item.Tag is string tag)
         {
+            Page? target = null;
             switch (tag)
             {
                 case "home":
-                    ContentFrame.Navigate(typeof(HomePage));
+                    _homePage ??= new HomePage();
+                    target = _homePage;
                     break;
                 case "extraction":
-                    ContentFrame.Navigate(typeof(ExtractionPage));
+                    _extractionPage ??= new ExtractionPage();
+                    target = _extractionPage;
                     break;
                 case "settings":
-                    ContentFrame.Navigate(typeof(SettingsPage));
+                    _settingsPage ??= new SettingsPage();
+                    target = _settingsPage;
                     break;
             }
+            if (target != null && !ReferenceEquals(ContentFrame.Content, target))
+                ContentFrame.Content = target;
         }
-    }
-
-    private void OnFrameNavigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
-    {
-        BackBtn.Visibility = ContentFrame.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void SetTitleBarDragRegion()
@@ -111,11 +119,25 @@ public sealed partial class MainWindow : Window
         AppWindow.TitleBar.SetDragRectangles(rects);
     }
 
-    private void OnBackClick(object sender, RoutedEventArgs e)
+    private void SetWindowIcon()
     {
-        if (ContentFrame.CanGoBack)
-            ContentFrame.GoBack();
+        try
+        {
+            var hwnd = GetHandle();
+            if (hwnd == IntPtr.Zero) return;
+            var iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "icon.png");
+            if (!System.IO.File.Exists(iconPath)) return;
+            using var bitmap = new System.Drawing.Bitmap(iconPath);
+            var iconHandle = bitmap.GetHicon();
+            const uint WM_SETICON = 0x0080;
+            SendMessage(hwnd, WM_SETICON, 0, iconHandle);
+            SendMessage(hwnd, WM_SETICON, 1, iconHandle);
+        }
+        catch { }
     }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, int wParam, IntPtr lParam);
 
     private void UpdateTitleBar()
     {

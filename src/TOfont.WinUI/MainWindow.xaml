@@ -29,22 +29,18 @@
                     </controls:NavigationViewItem.Icon>
                 </controls:NavigationViewItem>
             </controls:NavigationView.FooterMenuItems>
-            <controls:Frame x:Name="ContentFrame" />
+            <controls:Frame x:Name="ContentFrame">
+                <controls:Frame.ContentTransitions>
+                    <TransitionCollection>
+                        <EntranceThemeTransition FromVerticalOffset="20" />
+                    </TransitionCollection>
+                </controls:Frame.ContentTransitions>
+            </controls:Frame>
         </controls:NavigationView>
 
         <Grid x:Name="TitleBarArea" Height="32" VerticalAlignment="Top">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="32" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Button x:Name="BackBtn" Width="32" Height="32" Padding="0"
-                Visibility="Collapsed" Click="OnBackClick"
-                Background="Transparent" BorderThickness="0">
-                <controls:FontIcon Glyph="&#xE72B;" FontSize="16" />
-            </Button>
-            <StackPanel Grid.Column="1" Orientation="Horizontal"
-                Spacing="8" VerticalAlignment="Center" Margin="4,0,0,0">
+            <StackPanel Orientation="Horizontal"
+                Spacing="8" VerticalAlignment="Center" Margin="8,0,0,0">
                 <controls:FontIcon Glyph="&#xE943;" FontSize="18" />
                 <TextBlock x:Name="TitleText" Text="TOfont" FontSize="16" FontWeight="SemiBold"
                     VerticalAlignment="Center" />

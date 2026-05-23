@@ -18,18 +18,14 @@
             </Grid.RowDefinitions>
 
             <ListView x:Name="NavList" SelectionChanged="OnNavSelectionChanged"
-                SelectionMode="Single">
-                <ListViewItem x:Name="NavSettings" Tag="settings" IsSelected="True">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <controls:FontIcon Glyph="&#xE713;" FontSize="14" />
-                        <TextBlock Text="取模设置" FontSize="14" VerticalAlignment="Center" />
-                    </StackPanel>
+                SelectionMode="Single" Padding="0" Margin="0,3,0,0">
+                <ListViewItem x:Name="NavSettings" Tag="settings" IsSelected="True"
+                    Padding="16,10">
+                    <TextBlock Text="取模设置" FontSize="14" />
                 </ListViewItem>
-                <ListViewItem x:Name="NavAbout" Tag="about">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <controls:FontIcon Glyph="&#xE946;" FontSize="14" />
-                        <TextBlock Text="关于" FontSize="14" VerticalAlignment="Center" />
-                    </StackPanel>
+                <ListViewItem x:Name="NavAbout" Tag="about"
+                    Padding="16,10">
+                    <TextBlock Text="关于" FontSize="14" />
                 </ListViewItem>
             </ListView>
         </Grid>
