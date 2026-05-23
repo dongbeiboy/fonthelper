@@ -14,6 +14,11 @@ public sealed partial class SettingsPage : Page
         MsbFirstChk.IsChecked = AppSettings.MsbFirst;
         LitIs1Chk.IsChecked = AppSettings.LitIs1;
         UseHexChk.IsChecked = AppSettings.UseHex;
+
+        var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        var versionString = ver != null ? $"版本 v{ver.Major}.{ver.Minor}.{ver.Build}" : "";
+        VersionText.Text = versionString;
+
         _loaded = true;
     }
 
