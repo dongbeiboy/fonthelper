@@ -23,6 +23,10 @@ public sealed partial class MainWindow : Window
         ContentFrame.Navigated += OnFrameNavigated;
         NavView.SelectedItem = NavView.MenuItems[0];
 
+        var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        var versionString = ver != null ? $"v{ver.Major}.{ver.Minor}.{ver.Build}" : "";
+        TitleText.Text = $"TOfont {versionString}";
+
         if (Content is FrameworkElement root)
             root.ActualThemeChanged += (_, _) => { RefreshTheme(); UpdateTitleBar(); };
         TitleBarArea.Loaded += (_, _) =>

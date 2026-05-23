@@ -47,7 +47,7 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal"
                 Spacing="8" VerticalAlignment="Center" Margin="4,0,0,0">
                 <controls:FontIcon Glyph="&#xE943;" FontSize="18" />
-                <TextBlock Text="TOfont" FontSize="16" FontWeight="SemiBold"
+                <TextBlock x:Name="TitleText" Text="TOfont" FontSize="16" FontWeight="SemiBold"
                     VerticalAlignment="Center" />
             </StackPanel>
         </Grid>
