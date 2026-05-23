@@ -1,7 +1,6 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using TOfont.WinUI.Pages;
 
 namespace TOfont.WinUI;
@@ -76,29 +75,6 @@ public sealed partial class MainWindow : Window
     {
         try { _isDark = (Content as FrameworkElement)?.ActualTheme == ElementTheme.Dark; }
         catch { }
-    }
-
-    private void OnPaneOpening(NavigationView sender, object args)
-    {
-        SetPaneAcrylic(sender);
-    }
-
-    private static void SetPaneAcrylic(DependencyObject parent)
-    {
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is SplitView sv)
-            {
-                sv.PaneBackground = new AcrylicBrush
-                {
-                    TintColor = Microsoft.UI.Colors.Black,
-                    TintOpacity = 0.55
-                };
-                return;
-            }
-            SetPaneAcrylic(child);
-        }
     }
 
     private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

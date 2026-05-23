@@ -9,8 +9,7 @@
         <controls:NavigationView x:Name="NavView" IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False" SelectionChanged="OnNavSelectionChanged"
             PaneDisplayMode="LeftCompact"
-            Margin="0,32,0,0"
-            PaneOpening="OnPaneOpening">
+            Margin="0,32,0,0">
             <controls:NavigationView.MenuItems>
                 <controls:NavigationViewItem Content="主页" Tag="home">
                     <controls:NavigationViewItem.Icon>
