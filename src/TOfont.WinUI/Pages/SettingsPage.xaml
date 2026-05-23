@@ -57,12 +57,11 @@
                             </TextBlock>
                         </StackPanel>
 
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="技术栈" FontSize="16" FontWeight="SemiBold" />
-                            <TextBlock FontSize="13"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}">
-                                <Run Text=".NET 9 + WinUI 3 + SkiaSharp + System.Drawing.Common" />
-                            </TextBlock>
+                        <StackPanel Spacing="8" Margin="0,16,0,0">
+                            <TextBlock Text="仓库地址" FontSize="16" FontWeight="SemiBold" />
+                            <HyperlinkButton NavigateUri="https://github.com/dongbeiboy/fonthelper"
+                                Content="github.com/dongbeiboy/fonthelper"
+                                FontSize="13" Padding="0" />
                         </StackPanel>
 
                         <StackPanel Spacing="4" Margin="0,16,0,0">
