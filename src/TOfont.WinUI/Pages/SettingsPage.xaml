@@ -38,59 +38,61 @@
             Background="{ThemeResource DividerStrokeColorDefault}" />
 
         <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="SettingsPanel" Spacing="16" Padding="40,24" Visibility="Visible">
-                <ComboBox x:Name="ScanModeCombo" Header="扫描模式"
-                    SelectedIndex="0" SelectionChanged="OnSettingChanged">
-                    <ComboBoxItem>逐行</ComboBoxItem>
-                    <ComboBoxItem>逐列</ComboBoxItem>
-                    <ComboBoxItem>逐行进位</ComboBoxItem>
-                    <ComboBoxItem>逐列进位</ComboBoxItem>
-                </ComboBox>
+            <Grid>
+                <StackPanel x:Name="SettingsPanel" Spacing="16" Padding="40,24" Visibility="Visible">
+                    <ComboBox x:Name="ScanModeCombo" Header="扫描模式"
+                        SelectedIndex="0" SelectionChanged="OnSettingChanged">
+                        <ComboBoxItem>逐行</ComboBoxItem>
+                        <ComboBoxItem>逐列</ComboBoxItem>
+                        <ComboBoxItem>逐行进位</ComboBoxItem>
+                        <ComboBoxItem>逐列进位</ComboBoxItem>
+                    </ComboBox>
 
-                <CheckBox x:Name="MsbFirstChk" Content="高位在前"
-                    IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
-                <CheckBox x:Name="LitIs1Chk" Content="阳码 (点亮为1)"
-                    IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
-                <CheckBox x:Name="UseHexChk" Content="16进制输出"
-                    IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
-            </StackPanel>
-
-            <StackPanel x:Name="AboutPanel" Spacing="16" Padding="40,24" Visibility="Collapsed">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="TOfont" FontSize="28" FontWeight="Bold" />
-                    <TextBlock x:Name="VersionText" FontSize="14"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <CheckBox x:Name="MsbFirstChk" Content="高位在前"
+                        IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
+                    <CheckBox x:Name="LitIs1Chk" Content="阳码 (点亮为1)"
+                        IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
+                    <CheckBox x:Name="UseHexChk" Content="16进制输出"
+                        IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
                 </StackPanel>
 
-                <TextBlock Text="嵌入式点阵字模提取工具，支持 OLED / LCD 屏幕字库生成。"
-                    FontSize="14" TextWrapping="Wrap" />
+                <StackPanel x:Name="AboutPanel" Spacing="16" Padding="40,24" Visibility="Collapsed">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="TOfont" FontSize="28" FontWeight="Bold" />
+                        <TextBlock x:Name="VersionText" FontSize="14"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
 
-                <StackPanel Spacing="8">
-                    <TextBlock Text="功能特性" FontSize="16" FontWeight="SemiBold" />
-                    <TextBlock FontSize="13"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}">
-                        <Run Text="• " /><Run Text="文字取模 — 输入文字，选择字体，生成点阵数据" /><LineBreak />
-                        <Run Text="• " /><Run Text="图片取模 — 加载图片，裁剪缩放后二值化取模" /><LineBreak />
-                        <Run Text="• " /><Run Text="字体库 — 从 PTL 字符列表批量生成完整字库" /><LineBreak />
-                        <Run Text="• " /><Run Text="字库导入 — 导入已有二进制字库进行查看和再导出" /><LineBreak />
-                        <Run Text="• " /><Run Text="4 种扫描模式，高位/低位在前，阴码/阳码切换" /><LineBreak />
-                        <Run Text="• " /><Run Text="输出 C51 / ANSI C 格式字节数组" />
-                    </TextBlock>
-                </StackPanel>
+                    <TextBlock Text="嵌入式点阵字模提取工具，支持 OLED / LCD 屏幕字库生成。"
+                        FontSize="14" TextWrapping="Wrap" />
 
-                <StackPanel Spacing="8" Margin="0,16,0,0">
-                    <TextBlock Text="仓库地址" FontSize="16" FontWeight="SemiBold" />
-                    <HyperlinkButton NavigateUri="https://github.com/dongbeiboy/fonthelper"
-                        Content="github.com/dongbeiboy/fonthelper"
-                        FontSize="13" Padding="0" />
-                </StackPanel>
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="功能特性" FontSize="16" FontWeight="SemiBold" />
+                        <TextBlock FontSize="13"
+                            Foreground="{ThemeResource TextFillColorTertiaryBrush}">
+                            <Run Text="• " /><Run Text="文字取模 — 输入文字，选择字体，生成点阵数据" /><LineBreak />
+                            <Run Text="• " /><Run Text="图片取模 — 加载图片，裁剪缩放后二值化取模" /><LineBreak />
+                            <Run Text="• " /><Run Text="字体库 — 从 PTL 字符列表批量生成完整字库" /><LineBreak />
+                            <Run Text="• " /><Run Text="字库导入 — 导入已有二进制字库进行查看和再导出" /><LineBreak />
+                            <Run Text="• " /><Run Text="4 种扫描模式，高位/低位在前，阴码/阳码切换" /><LineBreak />
+                            <Run Text="• " /><Run Text="输出 C51 / ANSI C 格式字节数组" />
+                        </TextBlock>
+                    </StackPanel>
 
-                <StackPanel Spacing="4" Margin="0,16,0,0">
-                    <TextBlock FontSize="11"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="© 2026 TOfont" />
+                    <StackPanel Spacing="8" Margin="0,16,0,0">
+                        <TextBlock Text="仓库地址" FontSize="16" FontWeight="SemiBold" />
+                        <HyperlinkButton NavigateUri="https://github.com/dongbeiboy/fonthelper"
+                            Content="github.com/dongbeiboy/fonthelper"
+                            FontSize="13" Padding="0" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4" Margin="0,16,0,0">
+                        <TextBlock FontSize="11"
+                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                            Text="© 2026 TOfont" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+            </Grid>
         </ScrollViewer>
     </Grid>
 </Page>
