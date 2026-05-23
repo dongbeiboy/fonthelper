@@ -1,0 +1,32 @@
+<Page
+    x:Class="TOfont.WinUI.Pages.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="16" HorizontalAlignment="Center">
+            <TextBlock Text="TOfont" FontSize="48" FontWeight="Bold"
+                HorizontalAlignment="Center" />
+            <TextBlock Text="嵌入式点阵字模提取工具" FontSize="18"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                HorizontalAlignment="Center" />
+            <StackPanel Spacing="8" Margin="0,24,0,0">
+                <TextBlock Text="功能" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Text="• 文字取模 — 输入文字，选择字体，生成点阵数据" FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Text="• 图片取模 — 加载图片，裁剪缩放后二值化取模" FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Text="• 字体库 — 从 PTL 字符列表批量生成完整字库" FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Text="• 字库导入 — 导入已有二进制字库进行查看和再导出" FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Text="• 支持逐行/逐列/逐行进位/逐列进位 4 种扫描模式" FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Text="• 支持高位在前/低位在前、阴码/阳码切换" FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Text="• 输出 C51 / ANSI C 格式字节数组" FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Page>

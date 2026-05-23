@@ -1,0 +1,55 @@
+<Window
+    x:Class="TOfont.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    Title="TOfont">
+
+    <Grid>
+        <controls:NavigationView x:Name="NavView" IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False" SelectionChanged="OnNavSelectionChanged"
+            PaneDisplayMode="LeftCompact"
+            Margin="0,32,0,0"
+            PaneOpening="OnPaneOpening">
+            <controls:NavigationView.MenuItems>
+                <controls:NavigationViewItem Content="主页" Tag="home">
+                    <controls:NavigationViewItem.Icon>
+                        <controls:FontIcon Glyph="&#xE80F;" />
+                    </controls:NavigationViewItem.Icon>
+                </controls:NavigationViewItem>
+                <controls:NavigationViewItem Content="取模" Tag="extraction">
+                    <controls:NavigationViewItem.Icon>
+                        <controls:FontIcon Glyph="&#xE943;" />
+                    </controls:NavigationViewItem.Icon>
+                </controls:NavigationViewItem>
+            </controls:NavigationView.MenuItems>
+            <controls:NavigationView.FooterMenuItems>
+                <controls:NavigationViewItem Content="设置" Tag="settings">
+                    <controls:NavigationViewItem.Icon>
+                        <controls:FontIcon Glyph="&#xE713;" />
+                    </controls:NavigationViewItem.Icon>
+                </controls:NavigationViewItem>
+            </controls:NavigationView.FooterMenuItems>
+            <controls:Frame x:Name="ContentFrame" />
+        </controls:NavigationView>
+
+        <Grid x:Name="TitleBarArea" Height="32" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="32" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BackBtn" Width="32" Height="32" Padding="0"
+                Visibility="Collapsed" Click="OnBackClick"
+                Background="Transparent" BorderThickness="0">
+                <controls:FontIcon Glyph="&#xE72B;" FontSize="16" />
+            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                Spacing="8" VerticalAlignment="Center" Margin="4,0,0,0">
+                <controls:FontIcon Glyph="&#xE943;" FontSize="18" />
+                <TextBlock Text="TOfont" FontSize="16" FontWeight="SemiBold"
+                    VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
