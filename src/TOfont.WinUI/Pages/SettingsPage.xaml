@@ -85,7 +85,7 @@
                     <StackPanel Spacing="4" Margin="0,16,0,0">
                         <TextBlock FontSize="11"
                             Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                            Text="© 2026 TOfont" />
+                            Text="© 2026 dongbeiboy" />
                     </StackPanel>
                 </StackPanel>
             </Grid>

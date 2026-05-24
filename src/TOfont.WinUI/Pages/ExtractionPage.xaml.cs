@@ -428,16 +428,18 @@ public sealed partial class ExtractionPage : Page
     {
         var startX = gx * _zoom;
         var startY = gy * _zoom;
+        // 画右边和下边
         for (var px = 0; px < _zoom; px++)
-        {
-            SetPixel(pixels, stride, startX + px, startY, b, g, r);
             SetPixel(pixels, stride, startX + px, startY + _zoom - 1, b, g, r);
-        }
         for (var py = 0; py < _zoom; py++)
-        {
-            SetPixel(pixels, stride, startX, startY + py, b, g, r);
             SetPixel(pixels, stride, startX + _zoom - 1, startY + py, b, g, r);
-        }
+        // 第一行画上边，第一列画左边
+        if (gy == 0)
+            for (var px = 0; px < _zoom; px++)
+                SetPixel(pixels, stride, startX + px, startY, b, g, r);
+        if (gx == 0)
+            for (var py = 0; py < _zoom; py++)
+                SetPixel(pixels, stride, startX, startY + py, b, g, r);
     }
 
     private void FlushBitmap(int w, int h, byte[] pixels)
