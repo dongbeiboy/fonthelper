@@ -39,7 +39,22 @@ jobs:
           Move-Item -Path publish/* -Destination TOfont/
           Compress-Archive -Path TOfont -DestinationPath TOfont-win-x64.zip -CompressionLevel Optimal
 
+      - name: Get changelog
+        id: changelog
+        run: |
+          $prevTag = git describe --tags --abbrev=0 HEAD^ 2>$null
+          if ($prevTag) {
+            $log = git log "$prevTag..HEAD" --pretty=format:"- %s" --no-merges
+          } else {
+            $log = git log --pretty=format:"- %s" --no-merges -10
+          }
+          $log | Out-File -FilePath changelog.md -Encoding utf8
+          echo "changelog<<EOF" >> $env:GITHUB_OUTPUT
+          Get-Content changelog.md >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: TOfont-win-x64.zip
+          body: ${{ steps.changelog.outputs.changelog }}
