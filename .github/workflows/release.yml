@@ -17,6 +17,13 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Update version from tag
+        run: |
+          $version = "${{ github.ref_name }}" -replace "^v", ""
+          $csproj = "src/TOfont.WinUI/TOfont.WinUI.csproj"
+          (Get-Content $csproj) -replace '<Version>.*</Version>', "<Version>$version</Version>" | Set-Content $csproj
+          echo "Version updated to: $version"
+
       - name: Publish
         run: dotnet publish src/TOfont.WinUI/TOfont.WinUI.csproj -c Release -r win-x64 --self-contained -p:DebugType=None -p:DebugSymbols=false -o publish
 
