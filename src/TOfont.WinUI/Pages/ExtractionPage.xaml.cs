@@ -151,6 +151,9 @@ public sealed partial class ExtractionPage : Page
         var text = InputTextBox.Text;
         if (string.IsNullOrEmpty(text)) return;
 
+        // 统一换行符为 \n
+        text = text.Replace("\r\n", "\n").Replace("\r", "\n");
+
         var extractor = new FontExtractor
         {
             FontSize = (int)SizeBox.Value,
@@ -189,6 +192,7 @@ public sealed partial class ExtractionPage : Page
         var sb = new System.Text.StringBuilder();
         foreach (var glyph in glyphs)
         {
+            if (glyph.Character == '\n') continue; // 跳过换行符
             var converted = DotMatrixConverter.Convert(glyph.DotData, glyph.Width, glyph.Height,
                 (ScanMode)AppSettings.ScanMode, AppSettings.MsbFirst, AppSettings.LitIs1);
             var g = new GlyphInfo
@@ -463,20 +467,50 @@ public sealed partial class ExtractionPage : Page
     {
         var maxFW = _presetCols ?? 64;
         var maxFH = _presetRows ?? 64;
-        var frameW = Math.Min(glyphs.Max(g => g.Width), maxFW);
-        var frameH = Math.Min(glyphs.Max(g => g.Height), maxFH);
-        var (vpCols, vpRows) = GetViewportGridSize();
-
-        var charOffsets = new int[glyphs.Count];
+        var normalGlyphs = glyphs.Where(g => g.Character != '\n').ToList();
+        var frameW = normalGlyphs.Count > 0 ? Math.Min(normalGlyphs.Max(g => g.Width), maxFW) : 16;
+        var frameH = normalGlyphs.Count > 0 ? Math.Min(normalGlyphs.Max(g => g.Height), maxFH) : 16;
         var gap = 2;
-        var cum = 0;
+        var lineGap = 2;
+
+        // 按换行符分行，记录每行的字符索引
+        var lines = new List<List<int>>();
+        var currentLine = new List<int>();
         for (var i = 0; i < glyphs.Count; i++)
         {
-            charOffsets[i] = cum;
-            cum += frameW + gap;
+            if (glyphs[i].Character == '\n')
+            {
+                lines.Add(currentLine);
+                currentLine = new List<int>();
+            }
+            else
+            {
+                currentLine.Add(i);
+            }
         }
-        var totalCols = _presetCols ?? (cum - gap);
-        var totalRows = _presetRows ?? frameH;
+        if (currentLine.Count > 0)
+            lines.Add(currentLine);
+
+        // 计算每行每个字符的位置
+        var charPositions = new (int x, int y)[glyphs.Count];
+        for (var i = 0; i < charPositions.Length; i++)
+            charPositions[i] = (-1, -1); // 初始化为无效位置
+        var lineY = 0;
+        var maxLineW = 0;
+        foreach (var line in lines)
+        {
+            var lineX = 0;
+            foreach (var charIdx in line)
+            {
+                charPositions[charIdx] = (lineX, lineY);
+                lineX += frameW + gap;
+            }
+            maxLineW = Math.Max(maxLineW, line.Count > 0 ? (line.Count - 1) * (frameW + gap) + frameW : 0);
+            lineY += frameH + lineGap;
+        }
+
+        var totalCols = _presetCols ?? Math.Max(maxLineW, 1);
+        var totalRows = _presetRows ?? Math.Max(lineY - lineGap, frameH);
 
         var dms = glyphs.Select(g => new DotMatrix(g.Width, g.Height, g.DotData)).ToArray();
 
@@ -500,25 +534,28 @@ public sealed partial class ExtractionPage : Page
         {
             var charIdx = -1;
             var localX = 0;
+            var localY = gy;
             for (var i = 0; i < glyphs.Count; i++)
             {
-                if (gx >= charOffsets[i] && gx < charOffsets[i] + frameW)
+                var (cx, cy) = charPositions[i];
+                if (cx >= 0 && cy >= 0 && gx >= cx && gx < cx + frameW && gy >= cy && gy < cy + frameH)
                 {
                     charIdx = i;
-                    localX = gx - charOffsets[i];
+                    localX = gx - cx;
+                    localY = gy - cy;
                     break;
                 }
             }
 
             var dot = false;
-            if (charIdx >= 0)
+            if (charIdx >= 0 && glyphs[charIdx].Character != '\n')
             {
                 var g = glyphs[charIdx];
                 // 居中显示字符，垂直方向偏下
                 var offsetX = (frameW - g.Width) / 2 - (frameW - g.Width) / 4;
                 var offsetY = (frameH - g.Height) / 2 + (frameH - g.Height) / 2;
                 var pixelX = localX - offsetX;
-                var pixelY = gy - offsetY;
+                var pixelY = localY - offsetY;
                 if (pixelX >= 0 && pixelX < g.Width && pixelY >= 0 && pixelY < g.Height)
                     dot = dms[charIdx].GetPixel(pixelX, pixelY);
             }
