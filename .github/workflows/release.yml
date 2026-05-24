@@ -26,8 +26,11 @@ jobs:
           Remove-Item -Path publish/*.deps.json -Force -ErrorAction SilentlyContinue
           Remove-Item -Path publish/*.runtimeconfig.json -Force -ErrorAction SilentlyContinue
 
-      - name: Zip
-        run: Compress-Archive -Path publish/* -DestinationPath TOfont-win-x64.zip -CompressionLevel Optimal
+      - name: Pack to folder and zip
+        run: |
+          mkdir TOfont
+          Move-Item -Path publish/* -Destination TOfont/
+          Compress-Archive -Path TOfont -DestinationPath TOfont-win-x64.zip -CompressionLevel Optimal
 
       - name: Release
         uses: softprops/action-gh-release@v2
