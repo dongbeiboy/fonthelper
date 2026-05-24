@@ -475,8 +475,8 @@ public sealed partial class ExtractionPage : Page
             charOffsets[i] = cum;
             cum += frameW + gap;
         }
-        var totalCols = _presetCols ?? Math.Max(cum - gap, vpCols);
-        var totalRows = _presetRows ?? Math.Max(frameH, vpRows);
+        var totalCols = _presetCols ?? (cum - gap);
+        var totalRows = _presetRows ?? frameH;
 
         var dms = glyphs.Select(g => new DotMatrix(g.Width, g.Height, g.DotData)).ToArray();
 
@@ -514,8 +514,13 @@ public sealed partial class ExtractionPage : Page
             if (charIdx >= 0)
             {
                 var g = glyphs[charIdx];
-                if (localX < g.Width && gy < g.Height)
-                    dot = dms[charIdx].GetPixel(localX, gy);
+                // 居中显示字符，垂直方向偏下
+                var offsetX = (frameW - g.Width) / 2 - (frameW - g.Width) / 4;
+                var offsetY = (frameH - g.Height) / 2 + (frameH - g.Height) / 2;
+                var pixelX = localX - offsetX;
+                var pixelY = gy - offsetY;
+                if (pixelX >= 0 && pixelX < g.Width && pixelY >= 0 && pixelY < g.Height)
+                    dot = dms[charIdx].GetPixel(pixelX, pixelY);
             }
 
             if (dot)
