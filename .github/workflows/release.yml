@@ -20,8 +20,14 @@ jobs:
       - name: Publish
         run: dotnet publish src/TOfont.WinUI/TOfont.WinUI.csproj -c Release -r win-x64 --self-contained -p:DebugType=None -p:DebugSymbols=false -o publish
 
+      - name: Clean unnecessary files
+        run: |
+          Remove-Item -Path publish/*.pdb -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path publish/*.deps.json -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path publish/*.runtimeconfig.json -Force -ErrorAction SilentlyContinue
+
       - name: Zip
-        run: Compress-Archive -Path publish/* -DestinationPath TOfont-win-x64.zip
+        run: Compress-Archive -Path publish/* -DestinationPath TOfont-win-x64.zip -CompressionLevel Optimal
 
       - name: Release
         uses: softprops/action-gh-release@v2
