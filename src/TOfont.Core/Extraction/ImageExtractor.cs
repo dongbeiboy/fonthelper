@@ -25,8 +25,14 @@ public class ImageExtractor
         SKBitmap source;
         if (CropWidth.HasValue && CropHeight.HasValue)
         {
-            var cw = Math.Min(CropWidth.Value, original.Width - CropX);
-            var ch = Math.Min(CropHeight.Value, original.Height - CropY);
+            // 裁剪区域限制在图像范围内，越界时返回空矩阵，避免负尺寸崩溃
+            var maxW = Math.Max(original.Width - CropX, 0);
+            var maxH = Math.Max(original.Height - CropY, 0);
+            var cw = Math.Min(Math.Max(CropWidth.Value, 0), maxW);
+            var ch = Math.Min(Math.Max(CropHeight.Value, 0), maxH);
+            if (cw <= 0 || ch <= 0)
+                return new DotMatrix(0, 0);
+
             source = new SKBitmap(cw, ch);
             using var canvas = new SKCanvas(source);
             canvas.DrawBitmap(original,

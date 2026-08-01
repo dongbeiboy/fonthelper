@@ -19,7 +19,9 @@ public class FontImporter
 
             result.Add(new GlyphInfo
             {
-                Character = (char)(idx < 128 ? idx + 32 : idx),
+                // ASCII 字库：索引 0..94 对应 ASCII 32..126（可见字符）
+                // 非 ASCII 范围（如中文字库）字符码未知，用 '?' 占位，避免误导
+                Character = idx < 95 ? (char)(idx + 32) : '?',
                 Width = width,
                 Height = height,
                 DotData = charData

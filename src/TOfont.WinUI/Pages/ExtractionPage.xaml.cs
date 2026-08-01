@@ -162,24 +162,28 @@ public sealed partial class ExtractionPage : Page
         };
 
         var glyphs = extractor.ExtractRange(text, FontCombo.SelectedItem?.ToString() ?? "Microsoft YaHei");
-        var allData = new List<byte>();
-        _currentWidth = 0;
-        _currentHeight = 0;
 
+        // 一次性转换所有字形（跳过换行符），避免重复转换
+        var convertedGlyphs = new List<GlyphInfo>();
         foreach (var glyph in glyphs)
         {
+            if (glyph.Character == '\n') continue; // 跳过换行符
+
             var converted = DotMatrixConverter.Convert(glyph.DotData, glyph.Width, glyph.Height,
                 (ScanMode)AppSettings.ScanMode, AppSettings.MsbFirst, AppSettings.LitIs1);
-
-            allData.AddRange(converted);
-            if (_currentWidth == 0)
+            convertedGlyphs.Add(new GlyphInfo
             {
-                _currentWidth = glyph.Width;
-                _currentHeight = glyph.Height;
-            }
+                Character = glyph.Character,
+                Width = glyph.Width,
+                Height = glyph.Height,
+                DotData = converted
+            });
         }
 
-        _currentDotData = allData.ToArray();
+        var allData = convertedGlyphs.SelectMany(g => g.DotData).ToArray();
+        _currentDotData = allData;
+        _currentWidth = convertedGlyphs.FirstOrDefault()?.Width ?? 0;
+        _currentHeight = convertedGlyphs.FirstOrDefault()?.Height ?? 0;
 
         var fmt = new OutputFormat
         {
@@ -190,18 +194,8 @@ public sealed partial class ExtractionPage : Page
         var formatter = new OutputFormatter(fmt);
 
         var sb = new System.Text.StringBuilder();
-        foreach (var glyph in glyphs)
+        foreach (var g in convertedGlyphs)
         {
-            if (glyph.Character == '\n') continue; // 跳过换行符
-            var converted = DotMatrixConverter.Convert(glyph.DotData, glyph.Width, glyph.Height,
-                (ScanMode)AppSettings.ScanMode, AppSettings.MsbFirst, AppSettings.LitIs1);
-            var g = new GlyphInfo
-            {
-                Character = glyph.Character,
-                Width = glyph.Width,
-                Height = glyph.Height,
-                DotData = converted
-            };
             sb.Append(formatter.FormatGlyph(g));
         }
         OutputBox.Text = sb.ToString();
@@ -234,8 +228,10 @@ public sealed partial class ExtractionPage : Page
             FontCombo.SelectedItem?.ToString() ?? "Microsoft YaHei");
 
         var allData = new List<byte>();
-        _currentWidth = glyphs.FirstOrDefault()?.Width ?? fontSize;
-        _currentHeight = glyphs.FirstOrDefault()?.Height ?? fontSize;
+        // 取首个非空字形尺寸，避免首字符是空格（宽 0）时状态栏显示错误
+        var first = glyphs.FirstOrDefault(g => g.Width > 0);
+        _currentWidth = first?.Width ?? fontSize;
+        _currentHeight = first?.Height ?? fontSize;
 
         var hex = AppSettings.UseHex;
         var sb = new System.Text.StringBuilder();

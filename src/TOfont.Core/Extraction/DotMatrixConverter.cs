@@ -20,8 +20,25 @@ public static class DotMatrixConverter
     /// <returns>转换后的字节数组</returns>
     public static byte[] Convert(byte[] src, int width, int height, ScanMode mode, bool msbFirst, bool litIs1)
     {
-        // 总位数和总字节数
-        var totalBits = width * height;
+        // 进位模式（RowProgressive/ColumnProgressive）按固定字节块扫描：
+        // 每行/每列按 8 位对齐，尾部不足 8 位补 0，字节流长度固定为 块数×8。
+        // 若按 width*height 紧凑计算总位数，非 8 倍数尺寸会丢失尾部落差。
+        int totalBits;
+        if (mode == ScanMode.RowProgressive)
+        {
+            var bytesPerRow = (width + 7) / 8;
+            totalBits = bytesPerRow * 8 * height;
+        }
+        else if (mode == ScanMode.ColumnProgressive)
+        {
+            var bytesPerCol = (height + 7) / 8;
+            totalBits = bytesPerCol * 8 * width;
+        }
+        else
+        {
+            totalBits = width * height;
+        }
+
         var totalBytes = (totalBits + 7) / 8;
         var result = new byte[totalBytes];
 
@@ -32,23 +49,20 @@ public static class DotMatrixConverter
             // 根据模式计算源像素坐标
             int srcX, srcY;
 
-            if (mode is ScanMode.RowMajor or ScanMode.ColumnMajor)
+            if (mode == ScanMode.RowMajor)
             {
-                if (mode == ScanMode.RowMajor)
-                {
-                    srcX = baseStep % width;
-                    srcY = baseStep / width;
-                }
-                else // ColumnMajor
-                {
-                    srcY = baseStep % height;
-                    srcX = baseStep / height;
-                }
+                srcX = baseStep % width;
+                srcY = baseStep / width;
+            }
+            else if (mode == ScanMode.ColumnMajor)
+            {
+                srcY = baseStep % height;
+                srcX = baseStep / height;
             }
             else if (mode == ScanMode.RowProgressive)
             {
-                // 逐行进位: 取第1行前8点→第1字节, 第2行前8点→第2字节...
-                // 即字节0= row0.col[0..7], 字节1= row1.col[0..7], ..., 字节8= row0.col[8..15]...
+                // 逐行进位: 排列顺序 = 所有行的第1块(8点) → 所有行的第2块 → ...
+                // colBlock 按 height*8 分组: 每组覆盖所有 height 行的同一 8 位块
                 var colBlock = baseStep / (height * 8);
                 var row = (baseStep / 8) % height;
                 var colInBlock = baseStep % 8;
@@ -57,7 +71,8 @@ public static class DotMatrixConverter
             }
             else // ColumnProgressive
             {
-                // 逐列进位: 取第1列前8点→第1字节, 第2列前8点→第2字节...
+                // 逐列进位: 排列顺序 = 所有列的第1块(8点) → 所有列的第2块 → ...
+                // rowBlock 按 width*8 分组: 每组覆盖所有 width 列的同一 8 位块
                 var rowBlock = baseStep / (width * 8);
                 var col = (baseStep / 8) % width;
                 var rowInBlock = baseStep % 8;
@@ -65,8 +80,12 @@ public static class DotMatrixConverter
                 srcY = rowBlock * 8 + rowInBlock;
             }
 
+            // 块对齐后超出图像边界的位按 0 补齐（不参与阴码反转，保证字节流长度固定）
             if (srcX >= width || srcY >= height)
+            {
+                bitIndex++;
                 continue;
+            }
 
             // 从源数组获取该像素的位值
             var srcBitIndex = srcY * width + srcX;

@@ -13,6 +13,8 @@ public sealed partial class MainWindow : Window
 
     private bool _isActive = true;
     private bool _isDark;
+    private IntPtr _iconHandle;
+    private bool _iconSet;
 
     private HomePage? _homePage;
     private ExtractionPage? _extractionPage;
@@ -47,6 +49,7 @@ public sealed partial class MainWindow : Window
             UpdateTitleBar();
             SetWindowIcon();
         };
+        Closed += (_, _) => DestroyIconHandle();
     }
 
     public static IntPtr GetHandle()
@@ -123,21 +126,36 @@ public sealed partial class MainWindow : Window
     {
         try
         {
+            // 只设置一次，避免每次窗口激活都创建新的 HICON 导致 GDI 句柄泄漏
+            if (_iconSet) return;
             var hwnd = GetHandle();
             if (hwnd == IntPtr.Zero) return;
             var iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "icon.png");
             if (!System.IO.File.Exists(iconPath)) return;
             using var bitmap = new System.Drawing.Bitmap(iconPath);
-            var iconHandle = bitmap.GetHicon();
+            _iconHandle = bitmap.GetHicon();
             const uint WM_SETICON = 0x0080;
-            SendMessage(hwnd, WM_SETICON, 0, iconHandle);
-            SendMessage(hwnd, WM_SETICON, 1, iconHandle);
+            SendMessage(hwnd, WM_SETICON, 0, _iconHandle);
+            SendMessage(hwnd, WM_SETICON, 1, _iconHandle);
+            _iconSet = true;
         }
         catch { }
     }
 
+    private void DestroyIconHandle()
+    {
+        if (_iconHandle != IntPtr.Zero)
+        {
+            DestroyIcon(_iconHandle);
+            _iconHandle = IntPtr.Zero;
+        }
+    }
+
     [DllImport("user32.dll")]
     private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, int wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool DestroyIcon(IntPtr hIcon);
 
     private void UpdateTitleBar()
     {
