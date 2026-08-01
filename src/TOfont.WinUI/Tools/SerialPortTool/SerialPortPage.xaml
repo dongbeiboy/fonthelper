@@ -63,68 +63,118 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- 右侧：接收 / 发送 -->
-        <Grid Grid.Column="1" Margin="12,12,12,8">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="160" />
-            </Grid.RowDefinitions>
+        <!-- 右侧：调试助手 / Shell 终端 -->
+        <Pivot x:Name="ModePivot" Grid.Column="1" Margin="12,12,12,8"
+            SelectionChanged="OnModeTabChanged">
 
-            <!-- 接收区 -->
-            <Grid Grid.Row="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
-                    <TextBlock Text="接收区" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <ComboBox x:Name="ReceiveModeCombo" Header="模式" SelectedIndex="0" Width="120"
-                        SelectionChanged="OnReceiveModeChanged">
-                        <ComboBoxItem>HEX</ComboBoxItem>
-                        <ComboBoxItem>文本</ComboBoxItem>
-                    </ComboBox>
-                    <ComboBox x:Name="ReceiveCodingCombo" Header="编码" SelectedIndex="0" Width="100">
-                        <ComboBoxItem>GBK</ComboBoxItem>
-                        <ComboBoxItem>UTF-8</ComboBoxItem>
-                    </ComboBox>
-                    <Button Content="清空" Click="OnClearReceive" />
-                </StackPanel>
-                <TextBox x:Name="ReceiveBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
-                    TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
-                    ScrollViewer.VerticalScrollBarVisibility="Auto" />
-            </Grid>
+            <!-- Tab 1: 调试助手 -->
+            <PivotItem Header="调试助手">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="160" />
+                    </Grid.RowDefinitions>
 
-            <!-- 分隔 -->
-            <Border Grid.Row="1" Height="1" Background="{ThemeResource DividerStrokeColorDefault}" Margin="0,8" />
+                    <!-- 接收区 -->
+                    <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                            <TextBlock Text="接收区" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <ComboBox x:Name="ReceiveModeCombo" Header="模式" SelectedIndex="0" Width="120"
+                                SelectionChanged="OnReceiveModeChanged">
+                                <ComboBoxItem>HEX</ComboBoxItem>
+                                <ComboBoxItem>文本</ComboBoxItem>
+                            </ComboBox>
+                            <ComboBox x:Name="ReceiveCodingCombo" Header="编码" SelectedIndex="0" Width="100">
+                                <ComboBoxItem>GBK</ComboBoxItem>
+                                <ComboBoxItem>UTF-8</ComboBoxItem>
+                            </ComboBox>
+                            <Button Content="清空" Click="OnClearReceive" />
+                        </StackPanel>
+                        <TextBox x:Name="ReceiveBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                            TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                    </Grid>
 
-            <!-- 发送区 -->
-            <Grid Grid.Row="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
-                    <TextBlock Text="发送区" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <ComboBox x:Name="SendModeCombo" Header="模式" SelectedIndex="0" Width="120"
-                        SelectionChanged="OnSendModeChanged">
-                        <ComboBoxItem>HEX</ComboBoxItem>
-                        <ComboBoxItem>文本</ComboBoxItem>
-                    </ComboBox>
-                    <ComboBox x:Name="SendCodingCombo" Header="编码" SelectedIndex="0" Width="100">
-                        <ComboBoxItem>GBK</ComboBoxItem>
-                        <ComboBoxItem>UTF-8</ComboBoxItem>
-                    </ComboBox>
-                    <Button Content="清空" Click="OnClearSend" />
-                </StackPanel>
-                <TextBox x:Name="SendBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap"
-                    FontFamily="Consolas" FontSize="12" PlaceholderText="输入要发送的内容..."
-                    ScrollViewer.VerticalScrollBarVisibility="Auto" />
-                <Button Grid.Row="2" Content="发送" Click="OnSend" HorizontalAlignment="Stretch"
-                    Margin="0,6,0,0" />
-            </Grid>
-        </Grid>
+                    <!-- 分隔 -->
+                    <Border Grid.Row="1" Height="1" Background="{ThemeResource DividerStrokeColorDefault}" Margin="0,8" />
+
+                    <!-- 发送区 -->
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                            <TextBlock Text="发送区" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <ComboBox x:Name="SendModeCombo" Header="模式" SelectedIndex="0" Width="120"
+                                SelectionChanged="OnSendModeChanged">
+                                <ComboBoxItem>HEX</ComboBoxItem>
+                                <ComboBoxItem>文本</ComboBoxItem>
+                            </ComboBox>
+                            <ComboBox x:Name="SendCodingCombo" Header="编码" SelectedIndex="0" Width="100">
+                                <ComboBoxItem>GBK</ComboBoxItem>
+                                <ComboBoxItem>UTF-8</ComboBoxItem>
+                            </ComboBox>
+                            <Button Content="清空" Click="OnClearSend" />
+                        </StackPanel>
+                        <TextBox x:Name="SendBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap"
+                            FontFamily="Consolas" FontSize="12" PlaceholderText="输入要发送的内容..."
+                            ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                        <Button Grid.Row="2" Content="发送" Click="OnSend" HorizontalAlignment="Stretch"
+                            Margin="0,6,0,0" />
+                    </Grid>
+                </Grid>
+            </PivotItem>
+
+            <!-- Tab 2: Shell 终端（类 PuTTY） -->
+            <PivotItem Header="Shell 终端">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 终端工具栏 -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                        <TextBlock Text="终端" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <ComboBox x:Name="ShellModeCombo" Header="输入模式" SelectedIndex="0" Width="130"
+                            SelectionChanged="OnShellModeChanged">
+                            <ComboBoxItem>行模式</ComboBoxItem>
+                            <ComboBoxItem>字符直通</ComboBoxItem>
+                        </ComboBox>
+                        <ComboBox x:Name="ShellCodingCombo" Header="编码" SelectedIndex="0" Width="100">
+                            <ComboBoxItem>GBK</ComboBoxItem>
+                            <ComboBoxItem>UTF-8</ComboBoxItem>
+                        </ComboBox>
+                        <Button Content="清空" Click="OnClearShell" />
+                    </StackPanel>
+
+                    <!-- 终端输出区（仅远端回显） -->
+                    <TextBox x:Name="ShellOutputBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                        TextWrapping="NoWrap" FontFamily="Consolas" FontSize="13"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+
+                    <!-- 终端输入行 -->
+                    <Grid Grid.Row="2" Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="ShellInputBox" PlaceholderText="输入命令，Enter 发送（↑↓ 历史）"
+                            FontFamily="Consolas" FontSize="13" KeyDown="OnShellInputKeyDown"
+                            TextChanged="OnShellInputChanged" />
+                        <Button Grid.Column="1" Content="发送" Click="OnShellSend" Margin="6,0,0,0" />
+                    </Grid>
+                </Grid>
+            </PivotItem>
+        </Pivot>
 
         <!-- 底部状态栏 -->
         <Border Grid.Row="1" Grid.ColumnSpan="2"

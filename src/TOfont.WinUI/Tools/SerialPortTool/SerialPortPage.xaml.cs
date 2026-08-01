@@ -1,14 +1,17 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System.IO.Ports;
 using System.Text;
 using System.Text.RegularExpressions;
+using Windows.System;
 
 namespace TOfont.WinUI.Tools.SerialPortTool;
 
 /// <summary>
 /// 串口助手 — 参考 sucaibao/串口助手 (WinForms V1.1) 重写的 WinUI 3 版本。
 /// 功能对齐原版：串口配置、HEX/文本收发、GBK/UTF-8 编码、多字节分包缓冲。
+/// 内置 Shell 终端（类 PuTTY）：行模式（命令历史）/ 字符直通，仅远端回显。
 /// </summary>
 public sealed partial class SerialPortPage : Page
 {
@@ -17,6 +20,15 @@ public sealed partial class SerialPortPage : Page
 
     // 接收字节缓冲 — 多字节字符分包时暂存不完整字节，跨数据包合并
     private readonly List<byte> _receiveBuffer = new();
+
+    // Shell 终端状态
+    private bool _shellPassthrough;         // 字符直通模式
+    private bool _clearingShellInput;       // 防止清空输入框时递归触发
+    private string _lastShellInputText = "";
+    private readonly List<string> _shellHistory = new();
+    private int _shellHistoryIndex = -1;
+    private string _shellHistoryDraft = "";
+    private int _activeTabIndex;            // 0=调试助手, 1=Shell 终端
 
     public SerialPortPage()
     {
@@ -146,7 +158,18 @@ public sealed partial class SerialPortPage : Page
 
     private void AppendReceive(byte[] data, int count)
     {
-        if (ReceiveModeCombo.SelectedIndex == 0) // HEX
+        if (_activeTabIndex == 1) // Shell 终端：原始字节直接解码显示（仅远端回显）
+        {
+            var encoding = (ShellCodingCombo.SelectedIndex == 1) ? "utf-8" : "gb2312";
+            var text = Encoding.GetEncoding(encoding).GetString(data, 0, count);
+            ShellOutputBox.Text += text;
+            if (ShellOutputBox.Text.Length > 50000)
+                ShellOutputBox.Text = ShellOutputBox.Text[^25000..];
+            // 自动滚动到底部
+            ShellOutputBox.SelectionStart = ShellOutputBox.Text.Length;
+            ShellOutputBox.SelectionLength = 0;
+        }
+        else if (ReceiveModeCombo.SelectedIndex == 0) // HEX
         {
             ReceiveBox.Text += BytesToHex(data, count);
         }
@@ -268,4 +291,129 @@ public sealed partial class SerialPortPage : Page
     {
         SendCodingCombo.IsEnabled = SendModeCombo.SelectedIndex == 1;
     }
+
+    // ========== Shell 终端（类 PuTTY） ==========
+
+    /// <summary>
+    /// Tab 切换 — 记录当前活动 tab，接收数据按此路由
+    /// </summary>
+    private void OnModeTabChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _activeTabIndex = ModePivot.SelectedIndex;
+        if (_activeTabIndex == 1) ShellInputBox.Focus(FocusState.Programmatic);
+    }
+
+    private void OnShellModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _shellPassthrough = ShellModeCombo.SelectedIndex == 1;
+        _lastShellInputText = "";
+        _shellHistoryIndex = -1;
+        _clearingShellInput = true;
+        ShellInputBox.Text = "";
+        _clearingShellInput = false;
+        ShellInputBox.PlaceholderText = _shellPassthrough
+            ? "直通模式：输入即发送（仅远端回显）"
+            : "输入命令，Enter 发送（↑↓ 历史）";
+    }
+
+    private void OnShellInputKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (_shellPassthrough) return;
+
+        if (e.Key == VirtualKey.Enter)
+        {
+            SendShellLine();
+            e.Handled = true;
+        }
+        else if (e.Key == VirtualKey.Up)
+        {
+            if (_shellHistory.Count > 0)
+            {
+                if (_shellHistoryIndex == -1)
+                    _shellHistoryDraft = ShellInputBox.Text;
+                _shellHistoryIndex = Math.Min(_shellHistoryIndex + 1, _shellHistory.Count - 1);
+                ShellInputBox.Text = _shellHistory[_shellHistory.Count - 1 - _shellHistoryIndex];
+                ShellInputBox.SelectionStart = ShellInputBox.Text.Length;
+            }
+            e.Handled = true;
+        }
+        else if (e.Key == VirtualKey.Down)
+        {
+            if (_shellHistoryIndex >= 0)
+            {
+                _shellHistoryIndex--;
+                ShellInputBox.Text = _shellHistoryIndex >= 0
+                    ? _shellHistory[_shellHistory.Count - 1 - _shellHistoryIndex]
+                    : _shellHistoryDraft;
+                ShellInputBox.SelectionStart = ShellInputBox.Text.Length;
+            }
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// 字符直通模式：输入即发送，发送后立即清空输入框
+    /// </summary>
+    private void OnShellInputChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!_shellPassthrough || _clearingShellInput) return;
+
+        var text = ShellInputBox.Text;
+        if (text.Length > _lastShellInputText.Length)
+        {
+            var added = text[_lastShellInputText.Length..];
+            SendShellBytes(added);
+        }
+        _lastShellInputText = text;
+
+        // 输入即发即清
+        _clearingShellInput = true;
+        ShellInputBox.Text = "";
+        _clearingShellInput = false;
+        _lastShellInputText = "";
+    }
+
+    private void OnShellSend(object sender, RoutedEventArgs e) => SendShellLine();
+
+    /// <summary>
+    /// 行模式发送：整行 + 回车（嵌入式 CLI 普遍识别 CR）
+    /// </summary>
+    private void SendShellLine()
+    {
+        var line = ShellInputBox.Text;
+        if (string.IsNullOrEmpty(line)) return;
+
+        SendShellBytes(line + "\r");
+
+        if (_shellHistory.Count == 0 || _shellHistory[^1] != line)
+            _shellHistory.Add(line);
+        if (_shellHistory.Count > 50) _shellHistory.RemoveAt(0);
+        _shellHistoryIndex = -1;
+
+        _clearingShellInput = true;
+        ShellInputBox.Text = "";
+        _clearingShellInput = false;
+        _lastShellInputText = "";
+    }
+
+    private void SendShellBytes(string text)
+    {
+        if (!_serialPort.IsOpen)
+        {
+            StatusBar.Text = "请先打开串口";
+            return;
+        }
+        try
+        {
+            var encoding = (ShellCodingCombo.SelectedIndex == 1) ? "utf-8" : "gb2312";
+            var data = Encoding.GetEncoding(encoding).GetBytes(text);
+            _serialPort.Write(data, 0, data.Length);
+        }
+        catch (Exception ex)
+        {
+            StatusBar.Text = $"发送失败: {ex.Message}";
+        }
+    }
+
+    private void OnClearShell(object sender, RoutedEventArgs e) => ShellOutputBox.Text = "";
 }
