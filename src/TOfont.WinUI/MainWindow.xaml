@@ -16,11 +16,7 @@
                         <controls:FontIcon Glyph="&#xE80F;" />
                     </controls:NavigationViewItem.Icon>
                 </controls:NavigationViewItem>
-                <controls:NavigationViewItem Content="取模" Tag="extraction">
-                    <controls:NavigationViewItem.Icon>
-                        <controls:FontIcon Glyph="&#xE943;" />
-                    </controls:NavigationViewItem.Icon>
-                </controls:NavigationViewItem>
+                <!-- 工具菜单项由 ToolCatalog 在代码中动态生成，见 MainWindow.xaml.cs -->
             </controls:NavigationView.MenuItems>
             <controls:NavigationView.FooterMenuItems>
                 <controls:NavigationViewItem Content="设置" Tag="settings">

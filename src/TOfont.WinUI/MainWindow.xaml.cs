@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System.Runtime.InteropServices;
+using TOfont.WinUI.Framework;
 using TOfont.WinUI.Pages;
 
 namespace TOfont.WinUI;
@@ -15,9 +16,9 @@ public sealed partial class MainWindow : Window
     private bool _isDark;
     private IntPtr _iconHandle;
     private bool _iconSet;
+    private readonly Dictionary<string, Page> _pageCache = new();
 
     private HomePage? _homePage;
-    private ExtractionPage? _extractionPage;
     private SettingsPage? _settingsPage;
 
     public MainWindow()
@@ -26,6 +27,18 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         try { SystemBackdrop = new MicaBackdrop(); } catch { }
+
+        // 从工具目录动态生成导航菜单项
+        foreach (var tool in ToolCatalog.Tools)
+        {
+            NavView.MenuItems.Add(new NavigationViewItem
+            {
+                Content = tool.Title,
+                Tag = tool.Id,
+                Icon = new FontIcon { Glyph = tool.Glyph }
+            });
+        }
+
         ContentFrame.Navigate(typeof(HomePage));
         _homePage = ContentFrame.Content as HomePage;
         NavView.SelectedItem = NavView.MenuItems[0];
@@ -98,13 +111,22 @@ public sealed partial class MainWindow : Window
                     _homePage ??= new HomePage();
                     target = _homePage;
                     break;
-                case "extraction":
-                    _extractionPage ??= new ExtractionPage();
-                    target = _extractionPage;
-                    break;
                 case "settings":
                     _settingsPage ??= new SettingsPage();
                     target = _settingsPage;
+                    break;
+                default:
+                    // 工具页：从 ToolCatalog 查找，按需懒加载并缓存实例
+                    var tool = ToolCatalog.FindById(tag);
+                    if (tool != null)
+                    {
+                        if (!_pageCache.TryGetValue(tool.Id, out var page))
+                        {
+                            page = (Page)Activator.CreateInstance(tool.PageType)!;
+                            _pageCache[tool.Id] = page;
+                        }
+                        target = page;
+                    }
                     break;
             }
             if (target != null && !ReferenceEquals(ContentFrame.Content, target))
