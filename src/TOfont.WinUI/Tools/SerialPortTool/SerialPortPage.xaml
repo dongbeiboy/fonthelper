@@ -1,0 +1,139 @@
+<Page
+    x:Class="TOfont.WinUI.Tools.SerialPortTool.SerialPortPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="32" />
+        </Grid.RowDefinitions>
+
+        <!-- 左侧：串口配置 -->
+        <ScrollViewer Grid.Column="0" Padding="12">
+            <StackPanel Spacing="8">
+                <TextBlock Text="串口配置" FontWeight="SemiBold" />
+
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <ComboBox x:Name="PortCombo" Header="端口" Width="170" DropDownOpened="OnPortDropDown" />
+                    <Button Content="刷新" Click="OnRefreshPorts" VerticalAlignment="Bottom" Margin="0,0,0,2" />
+                </StackPanel>
+
+                <ComboBox x:Name="BaudCombo" Header="波特率">
+                    <ComboBoxItem>9600</ComboBoxItem>
+                    <ComboBoxItem>19200</ComboBoxItem>
+                    <ComboBoxItem>38400</ComboBoxItem>
+                    <ComboBoxItem>57600</ComboBoxItem>
+                    <ComboBoxItem>115200</ComboBoxItem>
+                    <ComboBoxItem>230400</ComboBoxItem>
+                    <ComboBoxItem>460800</ComboBoxItem>
+                    <ComboBoxItem>921600</ComboBoxItem>
+                </ComboBox>
+
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <ComboBox x:Name="DataBitsCombo" Header="数据位" Width="110">
+                        <ComboBoxItem>8</ComboBoxItem>
+                        <ComboBoxItem>7</ComboBoxItem>
+                        <ComboBoxItem>6</ComboBoxItem>
+                        <ComboBoxItem>5</ComboBoxItem>
+                    </ComboBox>
+                    <ComboBox x:Name="StopBitsCombo" Header="停止位" Width="110">
+                        <ComboBoxItem>1</ComboBoxItem>
+                        <ComboBoxItem>1.5</ComboBoxItem>
+                        <ComboBoxItem>2</ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+
+                <ComboBox x:Name="ParityCombo" Header="校验位">
+                    <ComboBoxItem>无</ComboBoxItem>
+                    <ComboBoxItem>奇校验</ComboBoxItem>
+                    <ComboBoxItem>偶校验</ComboBoxItem>
+                </ComboBox>
+
+                <Button x:Name="OpenBtn" Content="打开串口" Click="OnTogglePort"
+                    Style="{StaticResource AccentButtonStyle}" Margin="0,8,0,0" />
+
+                <TextBlock x:Name="PortStatus" Text="未连接" FontSize="11"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 右侧：接收 / 发送 -->
+        <Grid Grid.Column="1" Margin="12,12,12,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="160" />
+            </Grid.RowDefinitions>
+
+            <!-- 接收区 -->
+            <Grid Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                    <TextBlock Text="接收区" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <ComboBox x:Name="ReceiveModeCombo" Header="模式" SelectedIndex="0" Width="120"
+                        SelectionChanged="OnReceiveModeChanged">
+                        <ComboBoxItem>HEX</ComboBoxItem>
+                        <ComboBoxItem>文本</ComboBoxItem>
+                    </ComboBox>
+                    <ComboBox x:Name="ReceiveCodingCombo" Header="编码" SelectedIndex="0" Width="100">
+                        <ComboBoxItem>GBK</ComboBoxItem>
+                        <ComboBoxItem>UTF-8</ComboBoxItem>
+                    </ComboBox>
+                    <Button Content="清空" Click="OnClearReceive" />
+                </StackPanel>
+                <TextBox x:Name="ReceiveBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                    TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto" />
+            </Grid>
+
+            <!-- 分隔 -->
+            <Border Grid.Row="1" Height="1" Background="{ThemeResource DividerStrokeColorDefault}" Margin="0,8" />
+
+            <!-- 发送区 -->
+            <Grid Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                    <TextBlock Text="发送区" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <ComboBox x:Name="SendModeCombo" Header="模式" SelectedIndex="0" Width="120"
+                        SelectionChanged="OnSendModeChanged">
+                        <ComboBoxItem>HEX</ComboBoxItem>
+                        <ComboBoxItem>文本</ComboBoxItem>
+                    </ComboBox>
+                    <ComboBox x:Name="SendCodingCombo" Header="编码" SelectedIndex="0" Width="100">
+                        <ComboBoxItem>GBK</ComboBoxItem>
+                        <ComboBoxItem>UTF-8</ComboBoxItem>
+                    </ComboBox>
+                    <Button Content="清空" Click="OnClearSend" />
+                </StackPanel>
+                <TextBox x:Name="SendBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap"
+                    FontFamily="Consolas" FontSize="12" PlaceholderText="输入要发送的内容..."
+                    ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                <Button Grid.Row="2" Content="发送" Click="OnSend" HorizontalAlignment="Stretch"
+                    Margin="0,6,0,0" />
+            </Grid>
+        </Grid>
+
+        <!-- 底部状态栏 -->
+        <Border Grid.Row="1" Grid.ColumnSpan="2"
+            Background="{ThemeResource CardBackgroundFillColorSecondary}"
+            Padding="8,4" BorderThickness="0,1,0,0"
+            BorderBrush="{ThemeResource DividerStrokeColorDefault}">
+            <TextBlock x:Name="StatusBar" Text="就绪"
+                FontSize="11" VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+        </Border>
+    </Grid>
+</Page>

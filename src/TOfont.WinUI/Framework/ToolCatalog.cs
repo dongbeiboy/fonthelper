@@ -1,4 +1,5 @@
 using TOfont.WinUI.Tools.FontExtraction;
+using TOfont.WinUI.Tools.SerialPortTool;
 
 namespace TOfont.WinUI.Framework;
 
@@ -16,6 +17,13 @@ public static class ToolCatalog
             Title = "字模提取",
             Glyph = "\uE943",
             PageType = typeof(FontExtractionPage)
+        },
+        new()
+        {
+            Id = "serial-port",
+            Title = "串口助手",
+            Glyph = "\uE950",
+            PageType = typeof(SerialPortPage)
         },
         // 未来新工具在此追加一行即可
     ];
