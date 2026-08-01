@@ -1,10 +1,15 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using TOfont.WinUI.Framework;
 using TOfont.WinUI.Pages;
+using Windows.System;
 
 namespace TOfont.WinUI;
 
@@ -49,6 +54,15 @@ public sealed partial class MainWindow : Window
 
         if (Content is FrameworkElement root)
             root.ActualThemeChanged += (_, _) => { RefreshTheme(); UpdateTitleBar(); };
+
+#if DEBUG
+        // Debug 专属：按住 Ctrl+Alt 再左键点击，把控件类型链复制到剪贴板
+        if (Content is FrameworkElement debugRoot)
+        {
+            debugRoot.AddHandler(UIElement.PointerPressedEvent,
+                new PointerEventHandler(OnDebugInspect), true);
+        }
+#endif
         TitleBarArea.Loaded += (_, _) =>
         {
             RefreshTheme();
@@ -93,6 +107,64 @@ public sealed partial class MainWindow : Window
     }
 
     private bool IsDark => _isDark;
+
+#if DEBUG
+    /// <summary>
+    /// Debug 专属控件检视：按住 Ctrl+Alt 左键点击，把控件类型链 + 运行时实际属性复制到剪贴板。
+    /// </summary>
+    private void OnDebugInspect(object sender, PointerRoutedEventArgs e)
+    {
+        if ((e.KeyModifiers & VirtualKeyModifiers.Control) == 0 ||
+            (e.KeyModifiers & VirtualKeyModifiers.Menu) == 0)
+            return;
+
+        if (e.OriginalSource is not DependencyObject source) return;
+
+        var sb = new StringBuilder();
+        var node = source;
+        var depth = 0;
+        while (node != null && depth < 15)
+        {
+            var typeName = node.GetType().Name;
+            var info = new StringBuilder(typeName);
+
+            if (node is FrameworkElement fe)
+            {
+                var name = fe.Name;
+                if (!string.IsNullOrEmpty(name)) info.Append($"  x:Name=\"{name}\"");
+
+                // 运行时实际布局属性：真实尺寸、位置、可见性
+                var pos = fe.TransformToVisual(null)?.TransformPoint(new Windows.Foundation.Point(0, 0));
+                info.Append($"  size=({fe.ActualWidth:0.#}x{fe.ActualHeight:0.#})");
+                if (pos != null)
+                    info.Append($"  pos=({pos.Value.X:0.#},{pos.Value.Y:0.#})");
+                info.Append($"  vis={fe.Visibility}");
+                info.Append($"  opacity={fe.Opacity:0.##}");
+            }
+            else
+            {
+                var autoName = AutomationProperties.GetName(node);
+                if (!string.IsNullOrEmpty(autoName)) info.Append($"  AutomationName=\"{autoName}\"");
+            }
+
+            sb.AppendLine($"{new string(' ', depth * 2)}{info}");
+            node = VisualTreeHelper.GetParent(node);
+            depth++;
+        }
+
+        var text = sb.ToString().TrimEnd();
+        try
+        {
+            var pkg = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            pkg.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(pkg);
+            Debug.WriteLine($"[DEBUG] 控件信息已复制到剪贴板:\n{text}");
+        }
+        catch { }
+
+        e.Handled = true;
+    }
+#endif
 
     private void RefreshTheme()
     {

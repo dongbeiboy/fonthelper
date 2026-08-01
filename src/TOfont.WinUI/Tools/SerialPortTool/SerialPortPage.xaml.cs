@@ -1,6 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using System.IO.Ports;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -165,16 +167,11 @@ public sealed partial class SerialPortPage : Page
 
     private void AppendReceive(byte[] data, int count)
     {
-        if (_activeTabIndex == 1) // Shell 终端：原始字节直接解码显示（仅远端回显）
+        if (_activeTabIndex == 1) // Shell 终端：原始字节直接解码显示
         {
             var encoding = (ShellCodingCombo.SelectedIndex == 1) ? "utf-8" : "gb2312";
             var text = Encoding.GetEncoding(encoding).GetString(data, 0, count);
-            ShellOutputBox.Text += text;
-            if (ShellOutputBox.Text.Length > 50000)
-                ShellOutputBox.Text = ShellOutputBox.Text[^25000..];
-            // 自动滚动到底部
-            ShellOutputBox.SelectionStart = ShellOutputBox.Text.Length;
-            ShellOutputBox.SelectionLength = 0;
+            AppendShellOutput(text);
         }
         else if (ReceiveModeCombo.SelectedIndex == 0) // HEX
         {
@@ -304,11 +301,56 @@ public sealed partial class SerialPortPage : Page
     // ========== Shell 终端（类 PuTTY） ==========
 
     /// <summary>
-    /// Tab 切换 — 记录当前活动 tab，接收数据按此路由
+    /// Tab 切换 — 新标签页内容上滑淡入（首次打开不触发）
     /// </summary>
+    private bool _tabInitialized;
+
     private void OnModeTabChanged(object sender, SelectionChangedEventArgs e)
     {
-        _activeTabIndex = ModePivot.SelectedIndex;
+        _activeTabIndex = ModeTabView.SelectedIndex;
+
+        // 首次加载（页面打开）不淡入，只做后续切换时淡入
+        if (_tabInitialized && ModeTabView.SelectedItem is TabViewItem tvi &&
+            tvi.Content is UIElement content)
+        {
+            // 上滑 + 淡入组合动画
+            var translate = content.RenderTransform as TranslateTransform ?? new TranslateTransform();
+            content.RenderTransform = translate;
+
+            var storyboard = new Storyboard();
+
+            var opacityAnim = new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = new Duration(TimeSpan.FromMilliseconds(220)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(opacityAnim, content);
+            Storyboard.SetTargetProperty(opacityAnim, "Opacity");
+            storyboard.Children.Add(opacityAnim);
+
+            var slideAnim = new DoubleAnimation
+            {
+                From = 24,
+                To = 0,
+                Duration = new Duration(TimeSpan.FromMilliseconds(220)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(slideAnim, translate);
+            Storyboard.SetTargetProperty(slideAnim, "Y");
+            storyboard.Children.Add(slideAnim);
+
+            // 先复位再启动，避免切换时序问题
+            content.Opacity = 0;
+            translate.Y = 24;
+            storyboard.Begin();
+        }
+        else if (!_tabInitialized)
+        {
+            _tabInitialized = true;
+        }
+
         if (_activeTabIndex == 1 && ShellInputBox != null)
             ShellInputBox.Focus(FocusState.Programmatic);
     }
@@ -388,12 +430,15 @@ public sealed partial class SerialPortPage : Page
     private void OnShellSend(object sender, RoutedEventArgs e) => SendShellLine();
 
     /// <summary>
-    /// 行模式发送：整行 + 回车（嵌入式 CLI 普遍识别 CR）
+    /// 行模式发送：命令回显到终端 + 发送整行 + 回车（嵌入式 CLI 普遍识别 CR）
     /// </summary>
     private void SendShellLine()
     {
         var line = ShellInputBox.Text;
         if (string.IsNullOrEmpty(line)) return;
+
+        // 回显命令（终端风格提示符）
+        AppendShellOutput($"> {line}\r\n");
 
         SendShellBytes(line + "\r");
 
@@ -406,6 +451,18 @@ public sealed partial class SerialPortPage : Page
         ShellInputBox.Text = "";
         _clearingShellInput = false;
         _lastShellInputText = "";
+    }
+
+    /// <summary>
+    /// 向终端输出区追加文本并自动滚动到底部
+    /// </summary>
+    private void AppendShellOutput(string text)
+    {
+        ShellOutputBox.Text += text;
+        if (ShellOutputBox.Text.Length > 50000)
+            ShellOutputBox.Text = ShellOutputBox.Text[^25000..];
+        ShellOutputBox.SelectionStart = ShellOutputBox.Text.Length;
+        ShellOutputBox.SelectionLength = 0;
     }
 
     private void SendShellBytes(string text)

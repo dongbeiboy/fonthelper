@@ -68,17 +68,18 @@
             </Border>
         </ScrollViewer>
 
-        <!-- 右侧：调试助手 / Shell 终端 -->
-        <Pivot x:Name="ModePivot" Grid.Column="1" Margin="12,12,12,8"
+        <!-- 右侧：调试助手 / Shell 终端（TabView 自带标签条分隔线） -->
+        <TabView x:Name="ModeTabView" Grid.Column="1" Margin="12,12,12,8"
+            IsAddTabButtonVisible="False" TabWidthMode="SizeToContent"
             SelectionChanged="OnModeTabChanged">
 
             <!-- Tab 1: 调试助手 -->
-            <PivotItem Header="调试助手">
+            <TabViewItem Header="调试助手">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="2*" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="160" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
                     <!-- 接收区 -->
@@ -98,7 +99,7 @@
                                 <ComboBoxItem>GBK</ComboBoxItem>
                                 <ComboBoxItem>UTF-8</ComboBoxItem>
                             </ComboBox>
-                            <Button Content="清空" Click="OnClearReceive" />
+                            <Button Content="清空" Click="OnClearReceive" VerticalAlignment="Center" />
                         </StackPanel>
                         <TextBox x:Name="ReceiveBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
                             TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
@@ -126,7 +127,7 @@
                                 <ComboBoxItem>GBK</ComboBoxItem>
                                 <ComboBoxItem>UTF-8</ComboBoxItem>
                             </ComboBox>
-                            <Button Content="清空" Click="OnClearSend" />
+                            <Button Content="清空" Click="OnClearSend" VerticalAlignment="Center" />
                         </StackPanel>
                         <TextBox x:Name="SendBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap"
                             FontFamily="Consolas" FontSize="12" PlaceholderText="输入要发送的内容..."
@@ -135,51 +136,58 @@
                             Margin="0,6,0,0" />
                     </Grid>
                 </Grid>
-            </PivotItem>
+            </TabViewItem>
 
-            <!-- Tab 2: Shell 终端（类 PuTTY） -->
-            <PivotItem Header="Shell 终端">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+            <!-- Tab 2: Shell 终端（Windows Terminal 风格） -->
+            <TabViewItem Header="Shell 终端">
+                <Border CornerRadius="8" Background="#1E1E1E" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                    <!-- 终端工具栏 -->
-                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
-                        <TextBlock Text="终端" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        <ComboBox x:Name="ShellModeCombo" Header="输入模式" SelectedIndex="0" Width="130"
-                            SelectionChanged="OnShellModeChanged">
-                            <ComboBoxItem>行模式</ComboBoxItem>
-                            <ComboBoxItem>字符直通</ComboBoxItem>
-                        </ComboBox>
-                        <ComboBox x:Name="ShellCodingCombo" Header="编码" SelectedIndex="0" Width="100">
-                            <ComboBoxItem>GBK</ComboBoxItem>
-                            <ComboBoxItem>UTF-8</ComboBoxItem>
-                        </ComboBox>
-                        <Button Content="清空" Click="OnClearShell" />
-                    </StackPanel>
+                        <!-- 终端工具栏 -->
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                            <TextBlock Text="终端" FontWeight="SemiBold" VerticalAlignment="Center"
+                                Foreground="#CCCCCC" />
+                            <ComboBox x:Name="ShellModeCombo" Header="输入模式" SelectedIndex="0" Width="130"
+                                Background="#333333" Foreground="White"
+                                SelectionChanged="OnShellModeChanged">
+                                <ComboBoxItem>行模式</ComboBoxItem>
+                                <ComboBoxItem>字符直通</ComboBoxItem>
+                            </ComboBox>
+                            <ComboBox x:Name="ShellCodingCombo" Header="编码" SelectedIndex="0" Width="100"
+                                Background="#333333" Foreground="White">
+                                <ComboBoxItem>GBK</ComboBoxItem>
+                                <ComboBoxItem>UTF-8</ComboBoxItem>
+                            </ComboBox>
+                            <Button Content="清空" Click="OnClearShell" VerticalAlignment="Center" />
+                        </StackPanel>
 
-                    <!-- 终端输出区（仅远端回显） -->
-                    <TextBox x:Name="ShellOutputBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
-                        TextWrapping="NoWrap" FontFamily="Consolas" FontSize="13"
-                        ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                        <!-- 终端输出区（深色，等宽） -->
+                        <TextBox x:Name="ShellOutputBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                            TextWrapping="NoWrap" FontFamily="Consolas" FontSize="14"
+                            Background="Transparent" Foreground="#E6E6E6" BorderThickness="0"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
 
-                    <!-- 终端输入行 -->
-                    <Grid Grid.Row="2" Margin="0,6,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="ShellInputBox" PlaceholderText="输入命令，Enter 发送（↑↓ 历史）"
-                            FontFamily="Consolas" FontSize="13" KeyDown="OnShellInputKeyDown"
-                            TextChanged="OnShellInputChanged" />
-                        <Button Grid.Column="1" Content="发送" Click="OnShellSend" Margin="6,0,0,0" />
+                        <!-- 终端输入行：提示符 + 输入框（重叠布局，严格对齐） -->
+                        <Grid Grid.Row="2" Margin="0,8,0,0">
+                            <TextBox x:Name="ShellInputBox"
+                                PlaceholderText="输入命令，Enter 发送（↑↓ 历史）"
+                                FontFamily="Consolas" FontSize="14"
+                                Background="Transparent" Foreground="White" BorderThickness="0"
+                                Padding="26,0,0,0"
+                                KeyDown="OnShellInputKeyDown" TextChanged="OnShellInputChanged" />
+                            <TextBlock Text="&gt;" FontFamily="Consolas" FontSize="14"
+                                Foreground="#00C8FF" VerticalAlignment="Center"
+                                Margin="8,0,0,0" IsHitTestVisible="False" />
+                        </Grid>
                     </Grid>
-                </Grid>
-            </PivotItem>
-        </Pivot>
+                </Border>
+            </TabViewItem>
+        </TabView>
 
         <!-- 底部状态栏 -->
         <Border Grid.Row="1" Grid.ColumnSpan="2"
