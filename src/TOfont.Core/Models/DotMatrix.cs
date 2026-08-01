@@ -32,9 +32,9 @@ public class DotMatrix
     public void SetPixel(int x, int y, bool value)
     {
         var index = y * Width + x;
-        if (value)
-            Data[index / 8] |= (byte)(1 << (7 - index % 8));
-        else
-            Data[index / 8] &= (byte)~(1 << (7 - index % 8));
+        var byteIndex = index / 8;
+        var bitMask = (byte)(1 << (7 - index % 8));
+        // 无分支位运算：先清除目标位，再根据 value 决定是否置位
+        Data[byteIndex] = (byte)((Data[byteIndex] & ~bitMask) | (value ? bitMask : 0));
     }
 }

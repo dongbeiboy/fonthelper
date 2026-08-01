@@ -27,15 +27,6 @@ public static class DotMatrixConverter
 
         int bitIndex = 0;
 
-        var (dx, dy) = mode switch
-        {
-            ScanMode.RowMajor     => ( 1,  0), // 逐行：左→右
-            ScanMode.ColumnMajor  => ( 0,  1), // 逐列：上→下
-            ScanMode.RowProgressive => ( 1,  8), // 逐行进位
-            ScanMode.ColumnProgressive => ( 8,  1), // 逐列进位
-            _                     => ( 1,  0)
-        };
-
         for (int baseStep = 0; baseStep < totalBits; baseStep++)
         {
             // 根据模式计算源像素坐标

@@ -31,8 +31,9 @@ public class PtlReader
         if (hasCrLf)
             return ReadGb2312(bytes);
 
-        // 纯文本行模式（ASC.PTL 等）
-        var lines = File.ReadAllLines(filePath, Encoding.Default);
+        // 纯文本行模式（ASC.PTL 等）— 直接用已读取的 bytes 解码，避免二次读取
+        var text = Encoding.Default.GetString(bytes);
+        var lines = text.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
         return ParseLines(lines);
     }
 

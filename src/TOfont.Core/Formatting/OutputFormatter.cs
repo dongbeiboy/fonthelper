@@ -49,7 +49,8 @@ public class OutputFormatter
     /// </summary>
     public string FormatGlyphs(IEnumerable<GlyphInfo> glyphs)
     {
-        var sb = new StringBuilder();
+        // 预估容量：每个字形约 80 字节数据 + 格式开销 ≈ 200 字符
+        var sb = new StringBuilder(2048);
         foreach (var glyph in glyphs)
         {
             sb.Append(FormatGlyph(glyph));
