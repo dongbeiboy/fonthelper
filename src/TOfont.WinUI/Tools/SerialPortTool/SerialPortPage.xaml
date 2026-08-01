@@ -6,7 +6,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260" />
+            <ColumnDefinition Width="280" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -14,15 +14,19 @@
             <RowDefinition Height="32" />
         </Grid.RowDefinitions>
 
-        <!-- 左侧：串口配置 -->
-        <ScrollViewer Grid.Column="0" Padding="12">
-            <StackPanel Spacing="8">
-                <TextBlock Text="串口配置" FontWeight="SemiBold" />
+        <!-- 左侧：串口配置（Fluent 卡片） -->
+        <ScrollViewer Grid.Column="0" Padding="16">
+            <Border CornerRadius="8" Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefault}"
+                BorderBrush="{ThemeResource CardStrokeColorDefault}"
+                BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="串口配置" FontWeight="SemiBold" FontSize="16" />
 
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <ComboBox x:Name="PortCombo" Header="端口" Width="170" DropDownOpened="OnPortDropDown" />
-                    <Button Content="刷新" Click="OnRefreshPorts" VerticalAlignment="Bottom" Margin="0,0,0,2" />
-                </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <ComboBox x:Name="PortCombo" Header="端口" Width="170" DropDownOpened="OnPortDropDown" />
+                        <Button Content="刷新" Click="OnRefreshPorts" VerticalAlignment="Bottom" Margin="0,0,0,2" />
+                    </StackPanel>
 
                 <ComboBox x:Name="BaudCombo" Header="波特率">
                     <ComboBoxItem>9600</ComboBoxItem>
@@ -60,7 +64,8 @@
 
                 <TextBlock x:Name="PortStatus" Text="未连接" FontSize="11"
                     Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-            </StackPanel>
+                </StackPanel>
+            </Border>
         </ScrollViewer>
 
         <!-- 右侧：调试助手 / Shell 终端 -->

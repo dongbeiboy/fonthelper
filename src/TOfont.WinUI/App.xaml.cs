@@ -9,6 +9,17 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        UnhandledException += (_, e) =>
+        {
+            try
+            {
+                var msg = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {e.Exception}\n\n";
+                System.IO.File.AppendAllText(
+                    System.IO.Path.Combine(AppContext.BaseDirectory, "crash.log"), msg);
+                Console.Error.WriteLine(msg);
+            }
+            catch { }
+        };
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)

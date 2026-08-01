@@ -48,14 +48,21 @@ public sealed partial class SerialPortPage : Page
 
     private void RefreshPorts()
     {
-        var current = PortCombo.SelectedItem?.ToString() ?? "";
-        PortCombo.Items.Clear();
-        foreach (var name in SerialPort.GetPortNames())
-            PortCombo.Items.Add(name);
-        if (PortCombo.Items.Count > 0)
+        try
         {
-            PortCombo.SelectedIndex = PortCombo.Items.IndexOf(current);
-            if (PortCombo.SelectedIndex < 0) PortCombo.SelectedIndex = 0;
+            var current = PortCombo.SelectedItem?.ToString() ?? "";
+            PortCombo.Items.Clear();
+            foreach (var name in SerialPort.GetPortNames())
+                PortCombo.Items.Add(name);
+            if (PortCombo.Items.Count > 0)
+            {
+                PortCombo.SelectedIndex = PortCombo.Items.IndexOf(current);
+                if (PortCombo.SelectedIndex < 0) PortCombo.SelectedIndex = 0;
+            }
+        }
+        catch
+        {
+            // 枚举串口失败（注册表受限等）不影响页面使用
         }
     }
 
@@ -284,12 +291,14 @@ public sealed partial class SerialPortPage : Page
     {
         // 切换模式时清掉不完整的编码缓冲，避免串码
         _receiveBuffer.Clear();
-        ReceiveCodingCombo.IsEnabled = ReceiveModeCombo.SelectedIndex == 1;
+        if (ReceiveCodingCombo != null)
+            ReceiveCodingCombo.IsEnabled = ReceiveModeCombo.SelectedIndex == 1;
     }
 
     private void OnSendModeChanged(object sender, SelectionChangedEventArgs e)
     {
-        SendCodingCombo.IsEnabled = SendModeCombo.SelectedIndex == 1;
+        if (SendCodingCombo != null)
+            SendCodingCombo.IsEnabled = SendModeCombo.SelectedIndex == 1;
     }
 
     // ========== Shell 终端（类 PuTTY） ==========
@@ -300,7 +309,8 @@ public sealed partial class SerialPortPage : Page
     private void OnModeTabChanged(object sender, SelectionChangedEventArgs e)
     {
         _activeTabIndex = ModePivot.SelectedIndex;
-        if (_activeTabIndex == 1) ShellInputBox.Focus(FocusState.Programmatic);
+        if (_activeTabIndex == 1 && ShellInputBox != null)
+            ShellInputBox.Focus(FocusState.Programmatic);
     }
 
     private void OnShellModeChanged(object sender, SelectionChangedEventArgs e)
@@ -308,6 +318,8 @@ public sealed partial class SerialPortPage : Page
         _shellPassthrough = ShellModeCombo.SelectedIndex == 1;
         _lastShellInputText = "";
         _shellHistoryIndex = -1;
+        // Pivot 懒加载：ShellInputBox 可能尚未创建，判空保护
+        if (ShellInputBox == null) return;
         _clearingShellInput = true;
         ShellInputBox.Text = "";
         _clearingShellInput = false;
