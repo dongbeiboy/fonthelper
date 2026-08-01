@@ -8,19 +8,18 @@
     <Grid>
         <controls:NavigationView x:Name="NavView" IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False" SelectionChanged="OnNavSelectionChanged"
-            PaneDisplayMode="LeftCompact"
-            Margin="0,32,0,0">
+            PaneDisplayMode="Left"
+            IsPaneToggleButtonVisible="False"
+            OpenPaneLength="200"
+            Margin="0,48,0,0">
             <controls:NavigationView.MenuItems>
                 <controls:NavigationViewItem Content="主页" Tag="home">
                     <controls:NavigationViewItem.Icon>
                         <controls:FontIcon Glyph="&#xE80F;" />
                     </controls:NavigationViewItem.Icon>
                 </controls:NavigationViewItem>
-                <controls:NavigationViewItem Content="取模" Tag="extraction">
-                    <controls:NavigationViewItem.Icon>
-                        <controls:FontIcon Glyph="&#xE943;" />
-                    </controls:NavigationViewItem.Icon>
-                </controls:NavigationViewItem>
+                <controls:NavigationViewItemSeparator />
+                <!-- 工具菜单项由 ToolCatalog 在代码中动态生成，见 MainWindow.xaml.cs -->
             </controls:NavigationView.MenuItems>
             <controls:NavigationView.FooterMenuItems>
                 <controls:NavigationViewItem Content="设置" Tag="settings">
@@ -29,20 +28,23 @@
                     </controls:NavigationViewItem.Icon>
                 </controls:NavigationViewItem>
             </controls:NavigationView.FooterMenuItems>
-            <controls:Frame x:Name="ContentFrame">
-                <controls:Frame.ContentTransitions>
-                    <TransitionCollection>
-                        <EntranceThemeTransition FromVerticalOffset="20" />
-                    </TransitionCollection>
-                </controls:Frame.ContentTransitions>
-            </controls:Frame>
+            <controls:Frame x:Name="ContentFrame" />
         </controls:NavigationView>
 
-        <Grid x:Name="TitleBarArea" Height="32" VerticalAlignment="Top">
-            <StackPanel Orientation="Horizontal"
-                Spacing="8" VerticalAlignment="Center" Margin="8,0,0,0">
-                <controls:FontIcon Glyph="&#xE943;" FontSize="18" />
-                <TextBlock x:Name="TitleText" Text="TOfont" FontSize="16" FontWeight="SemiBold"
+        <!-- Win11 风格标题区：左侧 App 图标 + 名称，右侧留白 -->
+        <Grid x:Name="TitleBarArea" Height="48" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="12"
+                VerticalAlignment="Center" Margin="16,0,0,0">
+                <Border Width="28" Height="28" CornerRadius="7"
+                    Background="{ThemeResource AccentFillColorDefaultBrush}">
+                    <FontIcon Glyph="&#xE943;" FontSize="14" Foreground="White"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <TextBlock x:Name="TitleText" Text="TOfont" FontSize="14" FontWeight="SemiBold"
                     VerticalAlignment="Center" />
             </StackPanel>
         </Grid>

@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -8,9 +8,9 @@ using TOfont.Core.Formatting;
 using TOfont.Core.Models;
 using TOfont.Core.Parsing;
 
-namespace TOfont.WinUI.Pages;
+namespace TOfont.WinUI.Tools.FontExtraction;
 
-public sealed partial class ExtractionPage : Page
+public sealed partial class FontExtractionPage : Page
 {
     private bool _isTextMode = true;
     private bool _isFontLibMode;
@@ -26,7 +26,7 @@ public sealed partial class ExtractionPage : Page
     private int? _presetCols;
     private int? _presetRows;
 
-    public ExtractionPage()
+    public FontExtractionPage()
     {
         InitializeComponent();
         ModeSwitch.ItemsSource = new[] { "文字取模", "图片取模", "字体库", "字库导入" };

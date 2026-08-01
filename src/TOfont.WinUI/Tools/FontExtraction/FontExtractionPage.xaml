@@ -1,5 +1,5 @@
 <Page
-    x:Class="TOfont.WinUI.Pages.ExtractionPage"
+    x:Class="TOfont.WinUI.Tools.FontExtraction.FontExtractionPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls">
@@ -15,8 +15,12 @@
             <RowDefinition Height="32" />
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Column="0" Padding="12">
-            <StackPanel Spacing="8">
+        <ScrollViewer Grid.Column="0" Padding="16">
+            <Border CornerRadius="8" Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefault}"
+                BorderBrush="{ThemeResource CardStrokeColorDefault}"
+                BorderThickness="1">
+                <StackPanel Spacing="10">
 
                 <ComboBox x:Name="ModeSwitch" Header="模式" SelectedIndex="0"
                     SelectionChanged="OnModeChanged" />
@@ -83,7 +87,8 @@
 
                 <Button x:Name="ExtractBtn" Content="开始取模" Click="OnExtract"
                     Style="{StaticResource AccentButtonStyle}" Margin="0,8,0,0" />
-            </StackPanel>
+                </StackPanel>
+            </Border>
         </ScrollViewer>
 
         <Grid Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefault}">

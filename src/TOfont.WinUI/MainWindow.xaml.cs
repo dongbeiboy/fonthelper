@@ -1,9 +1,15 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
+using TOfont.WinUI.Framework;
 using TOfont.WinUI.Pages;
+using Windows.System;
 
 namespace TOfont.WinUI;
 
@@ -15,9 +21,9 @@ public sealed partial class MainWindow : Window
     private bool _isDark;
     private IntPtr _iconHandle;
     private bool _iconSet;
+    private readonly Dictionary<string, Page> _pageCache = new();
 
     private HomePage? _homePage;
-    private ExtractionPage? _extractionPage;
     private SettingsPage? _settingsPage;
 
     public MainWindow()
@@ -26,6 +32,18 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         try { SystemBackdrop = new MicaBackdrop(); } catch { }
+
+        // 从工具目录动态生成导航菜单项
+        foreach (var tool in ToolCatalog.Tools)
+        {
+            NavView.MenuItems.Add(new NavigationViewItem
+            {
+                Content = tool.Title,
+                Tag = tool.Id,
+                Icon = new FontIcon { Glyph = tool.Glyph }
+            });
+        }
+
         ContentFrame.Navigate(typeof(HomePage));
         _homePage = ContentFrame.Content as HomePage;
         NavView.SelectedItem = NavView.MenuItems[0];
@@ -36,6 +54,15 @@ public sealed partial class MainWindow : Window
 
         if (Content is FrameworkElement root)
             root.ActualThemeChanged += (_, _) => { RefreshTheme(); UpdateTitleBar(); };
+
+#if DEBUG
+        // Debug 专属：按住 Ctrl+Alt 再左键点击，把控件类型链复制到剪贴板
+        if (Content is FrameworkElement debugRoot)
+        {
+            debugRoot.AddHandler(UIElement.PointerPressedEvent,
+                new PointerEventHandler(OnDebugInspect), true);
+        }
+#endif
         TitleBarArea.Loaded += (_, _) =>
         {
             RefreshTheme();
@@ -81,6 +108,64 @@ public sealed partial class MainWindow : Window
 
     private bool IsDark => _isDark;
 
+#if DEBUG
+    /// <summary>
+    /// Debug 专属控件检视：按住 Ctrl+Alt 左键点击，把控件类型链 + 运行时实际属性复制到剪贴板。
+    /// </summary>
+    private void OnDebugInspect(object sender, PointerRoutedEventArgs e)
+    {
+        if ((e.KeyModifiers & VirtualKeyModifiers.Control) == 0 ||
+            (e.KeyModifiers & VirtualKeyModifiers.Menu) == 0)
+            return;
+
+        if (e.OriginalSource is not DependencyObject source) return;
+
+        var sb = new StringBuilder();
+        var node = source;
+        var depth = 0;
+        while (node != null && depth < 15)
+        {
+            var typeName = node.GetType().Name;
+            var info = new StringBuilder(typeName);
+
+            if (node is FrameworkElement fe)
+            {
+                var name = fe.Name;
+                if (!string.IsNullOrEmpty(name)) info.Append($"  x:Name=\"{name}\"");
+
+                // 运行时实际布局属性：真实尺寸、位置、可见性
+                var pos = fe.TransformToVisual(null)?.TransformPoint(new Windows.Foundation.Point(0, 0));
+                info.Append($"  size=({fe.ActualWidth:0.#}x{fe.ActualHeight:0.#})");
+                if (pos != null)
+                    info.Append($"  pos=({pos.Value.X:0.#},{pos.Value.Y:0.#})");
+                info.Append($"  vis={fe.Visibility}");
+                info.Append($"  opacity={fe.Opacity:0.##}");
+            }
+            else
+            {
+                var autoName = AutomationProperties.GetName(node);
+                if (!string.IsNullOrEmpty(autoName)) info.Append($"  AutomationName=\"{autoName}\"");
+            }
+
+            sb.AppendLine($"{new string(' ', depth * 2)}{info}");
+            node = VisualTreeHelper.GetParent(node);
+            depth++;
+        }
+
+        var text = sb.ToString().TrimEnd();
+        try
+        {
+            var pkg = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            pkg.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(pkg);
+            Debug.WriteLine($"[DEBUG] 控件信息已复制到剪贴板:\n{text}");
+        }
+        catch { }
+
+        e.Handled = true;
+    }
+#endif
+
     private void RefreshTheme()
     {
         try { _isDark = (Content as FrameworkElement)?.ActualTheme == ElementTheme.Dark; }
@@ -98,13 +183,22 @@ public sealed partial class MainWindow : Window
                     _homePage ??= new HomePage();
                     target = _homePage;
                     break;
-                case "extraction":
-                    _extractionPage ??= new ExtractionPage();
-                    target = _extractionPage;
-                    break;
                 case "settings":
                     _settingsPage ??= new SettingsPage();
                     target = _settingsPage;
+                    break;
+                default:
+                    // 工具页：从 ToolCatalog 查找，按需懒加载并缓存实例
+                    var tool = ToolCatalog.FindById(tag);
+                    if (tool != null)
+                    {
+                        if (!_pageCache.TryGetValue(tool.Id, out var page))
+                        {
+                            page = (Page)Activator.CreateInstance(tool.PageType)!;
+                            _pageCache[tool.Id] = page;
+                        }
+                        target = page;
+                    }
                     break;
             }
             if (target != null && !ReferenceEquals(ContentFrame.Content, target))
