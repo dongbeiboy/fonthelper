@@ -6,9 +6,22 @@ on:
 
 jobs:
   build:
+    name: Build (${{ matrix.mode.name }})
     runs-on: windows-latest
-    permissions:
-      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+          - name: full   # 含 .NET 运行时
+            self_contained: 'true'
+            out: publish
+            setup_mode: full
+            setup_suffix: ''
+          - name: nofx   # 不含 .NET 运行时
+            self_contained: 'false'
+            out: publish-fd
+            setup_mode: nofx
+            setup_suffix: '-nofx'
     steps:
       - uses: actions/checkout@v4
 
@@ -24,40 +37,63 @@ jobs:
           (Get-Content $csproj) -replace '<Version>.*</Version>', "<Version>$version</Version>" | Set-Content $csproj
           echo "Version updated to: $version"
 
-      - name: Publish (self-contained, 含 .NET 运行时)
-        run: dotnet publish src/TOfont.WinUI/TOfont.WinUI.csproj -c Release -r win-x64 --self-contained -p:DebugType=None -p:DebugSymbols=false -o publish
+      - name: Publish
+        run: dotnet publish src/TOfont.WinUI/TOfont.WinUI.csproj -c Release -r win-x64 --self-contained ${{ matrix.mode.self_contained }} -p:DebugType=None -p:DebugSymbols=false -o ${{ matrix.mode.out }}
 
-      - name: Clean unnecessary files (self-contained)
+      - name: Clean unnecessary files
         run: |
-          Remove-Item -Path publish/*.pdb -Force -ErrorAction SilentlyContinue
-          Remove-Item -Path publish/*.deps.json -Force -ErrorAction SilentlyContinue
-          Remove-Item -Path publish/*.runtimeconfig.json -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path ${{ matrix.mode.out }}/*.pdb -Force -ErrorAction SilentlyContinue
+          if ("${{ matrix.mode.self_contained }}" -eq "true") {
+            # 自包含不需要 deps/runtimeconfig，framework-dependent 必须保留
+            Remove-Item -Path ${{ matrix.mode.out }}/*.deps.json -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path ${{ matrix.mode.out }}/*.runtimeconfig.json -Force -ErrorAction SilentlyContinue
+          }
 
-      - name: Publish (framework-dependent, 不含 .NET 运行时)
-        run: dotnet publish src/TOfont.WinUI/TOfont.WinUI.csproj -c Release -r win-x64 --self-contained false -p:DebugType=None -p:DebugSymbols=false -o publish-fd
-
-      - name: Clean unnecessary files (framework-dependent)
-        run: |
-          Remove-Item -Path publish-fd/*.pdb -Force -ErrorAction SilentlyContinue
-
-      - name: Build installers with Inno Setup
+      - name: Build installer with Inno Setup
         run: |
           $version = "${{ github.ref_name }}" -replace "^v", ""
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           if (!(Test-Path $iscc)) {
             choco install innosetup -y --no-progress
           }
-          # 含 .NET 运行时安装包
-          & $iscc "installer/installer.iss" /DMyAppVersion=$version /DBuildMode=full /O"$env:GITHUB_WORKSPACE"
-          # 不含 .NET 运行时安装包
-          & $iscc "installer/installer.iss" /DMyAppVersion=$version /DBuildMode=nofx /O"$env:GITHUB_WORKSPACE"
-          Get-ChildItem TOfont-setup-*.exe | Select-Object Name, Length
+          & $iscc "installer/installer.iss" /DMyAppVersion=$version /DBuildMode=${{ matrix.mode.setup_mode }} /O"$env:GITHUB_WORKSPACE"
+          Get-ChildItem TOfont-setup*.exe | Select-Object Name, Length
 
-      - name: Pack to folder and zip (绿色版，含 .NET)
+      - name: Pack green zip (仅含框架版)
+        if: matrix.mode.name == 'full'
         run: |
           mkdir TOfont
           Move-Item -Path publish/* -Destination TOfont/
           Compress-Archive -Path TOfont -DestinationPath TOfont-win-x64.zip -CompressionLevel Optimal
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.mode.name }}
+          path: |
+            TOfont-setup${{ matrix.mode.setup_suffix }}-*.exe
+            TOfont-win-x64.zip
+          if-no-files-found: warn
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: Get-ChildItem artifacts | Select-Object Name, @{n='MB';e={[Math]::Round($_.Length/1MB,1)}}
 
       - name: Get changelog
         id: changelog
@@ -76,7 +112,5 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            TOfont-win-x64.zip
-            TOfont-setup-*.exe
+          files: artifacts/**
           body: ${{ steps.changelog.outputs.changelog }}
