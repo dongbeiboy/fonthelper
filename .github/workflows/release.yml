@@ -24,26 +24,36 @@ jobs:
           (Get-Content $csproj) -replace '<Version>.*</Version>', "<Version>$version</Version>" | Set-Content $csproj
           echo "Version updated to: $version"
 
-      - name: Publish
+      - name: Publish (self-contained, 含 .NET 运行时)
         run: dotnet publish src/TOfont.WinUI/TOfont.WinUI.csproj -c Release -r win-x64 --self-contained -p:DebugType=None -p:DebugSymbols=false -o publish
 
-      - name: Clean unnecessary files
+      - name: Clean unnecessary files (self-contained)
         run: |
           Remove-Item -Path publish/*.pdb -Force -ErrorAction SilentlyContinue
           Remove-Item -Path publish/*.deps.json -Force -ErrorAction SilentlyContinue
           Remove-Item -Path publish/*.runtimeconfig.json -Force -ErrorAction SilentlyContinue
 
-      - name: Build installer with Inno Setup
+      - name: Publish (framework-dependent, 不含 .NET 运行时)
+        run: dotnet publish src/TOfont.WinUI/TOfont.WinUI.csproj -c Release -r win-x64 --self-contained false -p:DebugType=None -p:DebugSymbols=false -o publish-fd
+
+      - name: Clean unnecessary files (framework-dependent)
+        run: |
+          Remove-Item -Path publish-fd/*.pdb -Force -ErrorAction SilentlyContinue
+
+      - name: Build installers with Inno Setup
         run: |
           $version = "${{ github.ref_name }}" -replace "^v", ""
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           if (!(Test-Path $iscc)) {
             choco install innosetup -y --no-progress
           }
-          & $iscc "installer/installer.iss" /DMyAppVersion=$version /O"$env:GITHUB_WORKSPACE"
+          # 含 .NET 运行时安装包
+          & $iscc "installer/installer.iss" /DMyAppVersion=$version /DBuildMode=full /O"$env:GITHUB_WORKSPACE"
+          # 不含 .NET 运行时安装包
+          & $iscc "installer/installer.iss" /DMyAppVersion=$version /DBuildMode=nofx /O"$env:GITHUB_WORKSPACE"
           Get-ChildItem TOfont-setup-*.exe | Select-Object Name, Length
 
-      - name: Pack to folder and zip
+      - name: Pack to folder and zip (绿色版，含 .NET)
         run: |
           mkdir TOfont
           Move-Item -Path publish/* -Destination TOfont/
