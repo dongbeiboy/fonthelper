@@ -23,6 +23,12 @@ public sealed partial class SerialPortPage : Page
     // 接收字节缓冲 — 多字节字符分包时暂存不完整字节，跨数据包合并
     private readonly List<byte> _receiveBuffer = new();
 
+    // 接收节流 — 高频小包先累积，定时批量刷新 UI，避免仿真模式全量重设 TextBox 卡顿
+    private readonly object _rxLock = new();
+    private readonly List<byte> _pendingRx = new();
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _rxTimer;
+    private bool _rxTimerRunning;
+
     // Shell 终端状态
     private readonly TerminalEmulator _emulator = new();
     private bool _shellPassthrough;         // true = 透传模式（原始字节原样显示）
@@ -43,6 +49,11 @@ public sealed partial class SerialPortPage : Page
         DataBitsCombo.SelectedIndex = 0;    // 8
         StopBitsCombo.SelectedIndex = 0;    // 1
         ParityCombo.SelectedIndex = 0;      // 无
+
+        // 接收节流定时器：50ms 批量刷新一次
+        _rxTimer = DispatcherQueue.CreateTimer();
+        _rxTimer.Interval = TimeSpan.FromMilliseconds(50);
+        _rxTimer.Tick += (_, _) => FlushPendingRx();
 
         RefreshPorts();
 
@@ -160,19 +171,39 @@ public sealed partial class SerialPortPage : Page
         var read = _serialPort.Read(data, 0, count);
         if (read <= 0) return;
 
-        // 回 UI 线程追加显示
-        DispatcherQueue.TryEnqueue(() =>
+        // 先入缓冲，定时批量刷新（串口回调在后台线程，不能直接碰 UI）
+        lock (_rxLock)
         {
-            AppendReceive(data, read);
-        });
+            for (var i = 0; i < read; i++) _pendingRx.Add(data[i]);
+            if (!_rxTimerRunning && _rxTimer != null)
+            {
+                _rxTimerRunning = true;
+                _rxTimer.Start();
+            }
+        }
+    }
+
+    /// <summary>定时器触发：取走累积字节，一次性更新 UI。</summary>
+    private void FlushPendingRx()
+    {
+        byte[] batch;
+        lock (_rxLock)
+        {
+            _rxTimerRunning = false;
+            _rxTimer?.Stop();
+            batch = _pendingRx.ToArray();
+            _pendingRx.Clear();
+        }
+        if (batch.Length == 0) return;
+        AppendReceive(batch, batch.Length);
     }
 
     private void AppendReceive(byte[] data, int count)
     {
         if (_activeTabIndex == 1) // Shell 终端：原始字节直接解码显示
         {
-            var encoding = (ShellCodingCombo.SelectedIndex == 1) ? "utf-8" : "gb2312";
-            var text = Encoding.GetEncoding(encoding).GetString(data, 0, count);
+            var encoding = SelectedCoding(ShellCodingCombo);
+            var text = encoding.GetString(data, 0, count);
             AppendShellOutput(text);
         }
         else if (ReceiveModeCombo.SelectedIndex == 0) // HEX
@@ -198,7 +229,7 @@ public sealed partial class SerialPortPage : Page
         _receiveBuffer.AddRange(bytes.Take(count));
 
         var decode = new List<byte>();
-        var encoding = (ReceiveCodingCombo.SelectedIndex == 1) ? "utf-8" : "gb2312";
+        var encoding = SelectedCoding(ReceiveCodingCombo);
 
         while (_receiveBuffer.Count > 0)
         {
@@ -218,7 +249,7 @@ public sealed partial class SerialPortPage : Page
             _receiveBuffer.RemoveRange(0, charLen);
         }
 
-        return Encoding.GetEncoding(encoding).GetString(decode.ToArray());
+        return encoding.GetString(decode.ToArray());
     }
 
     private static string BytesToHex(byte[] bytes, int count)
@@ -229,10 +260,33 @@ public sealed partial class SerialPortPage : Page
         return sb.ToString();
     }
 
+    /// <summary>根据编码下拉框选中的项名返回对应 Encoding。默认 GBK。</summary>
+    private static Encoding SelectedCoding(ComboBox combo)
+    {
+        var name = (combo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "GBK";
+        try
+        {
+            return name switch
+            {
+                "UTF-8" => Encoding.UTF8,
+                "ASCII" => Encoding.ASCII,
+                "GB2312" => Encoding.GetEncoding("gb2312"),
+                "UTF-16LE" => Encoding.Unicode,
+                "UTF-16BE" => Encoding.BigEndianUnicode,
+                "Big5" => Encoding.GetEncoding("big5"),
+                _ => Encoding.GetEncoding("gbk")
+            };
+        }
+        catch
+        {
+            return Encoding.UTF8;
+        }
+    }
+
     private byte[] TextToBytes(string str)
     {
-        var encoding = (SendCodingCombo.SelectedIndex == 1) ? "utf-8" : "gb2312";
-        return Encoding.GetEncoding(encoding).GetBytes(str);
+        var encoding = SelectedCoding(SendCodingCombo);
+        return encoding.GetBytes(str);
     }
 
     private static byte[] HexToBytes(string str)
@@ -463,7 +517,8 @@ public sealed partial class SerialPortPage : Page
 
     /// <summary>
     /// 向终端输出区追加文本并自动滚动到底部。
-    /// 仿真终端模式：过 TerminalEmulator 处理退格/回车/ANSI，全量替换（回车会覆盖历史行）。
+    /// 仿真终端模式：过 TerminalEmulator 处理退格/回车/ANSI。
+    ///   纯追加走增量（只追加新增段），改写（回车覆盖/退格/清屏）才全量重设，避免高频流卡顿。
     /// 透传模式：原始文本原样追加。
     /// </summary>
     private void AppendShellOutput(string text)
@@ -471,14 +526,17 @@ public sealed partial class SerialPortPage : Page
         if (_shellPassthrough)
         {
             ShellOutputBox.Text += text;
+            if (ShellOutputBox.Text.Length > 50000)
+                ShellOutputBox.Text = ShellOutputBox.Text[^25000..];
         }
         else
         {
-            _emulator.Feed(text);
-            ShellOutputBox.Text = _emulator.Text;
+            // 增量：纯追加只拼新增段；退格/回车覆盖/清屏等改写才全量
+            if (_emulator.Feed(text))
+                ShellOutputBox.Text = _emulator.Text;
+            else
+                ShellOutputBox.Text += _emulator.TakeAppend();
         }
-        if (ShellOutputBox.Text.Length > 50000)
-            ShellOutputBox.Text = ShellOutputBox.Text[^25000..];
 
         // 自动滚动开关（设置 → 串口助手 → Shell 终端自动滚动）
         if (AppSettings.ShellAutoScroll)
@@ -497,8 +555,8 @@ public sealed partial class SerialPortPage : Page
         }
         try
         {
-            var encoding = (ShellCodingCombo.SelectedIndex == 1) ? "utf-8" : "gb2312";
-            var data = Encoding.GetEncoding(encoding).GetBytes(text);
+            var encoding = SelectedCoding(ShellCodingCombo);
+            var data = encoding.GetBytes(text);
             _serialPort.Write(data, 0, data.Length);
         }
         catch (Exception ex)
@@ -543,6 +601,7 @@ public sealed partial class SerialPortPage : Page
             ShellInputBox.AcceptsReturn = false;
             ShellInputBox.TextWrapping = TextWrapping.NoWrap;
             ShellInputBox.Height = 40;
+            ShellInputBox.MinHeight = 0;
             ShellInputBox.VerticalContentAlignment = VerticalAlignment.Center;
             ShellInputBox.Padding = new Thickness(26, 12, 8, 12);
             ShellInputBox.PlaceholderText = _shellPassthrough

@@ -115,9 +115,14 @@
                                 <ComboBoxItem>HEX</ComboBoxItem>
                                 <ComboBoxItem>文本</ComboBoxItem>
                             </ComboBox>
-                            <ComboBox x:Name="ReceiveCodingCombo" Header="编码" SelectedIndex="0" Width="100">
+                            <ComboBox x:Name="ReceiveCodingCombo" Header="编码" SelectedIndex="0" Width="110">
                                 <ComboBoxItem>GBK</ComboBoxItem>
                                 <ComboBoxItem>UTF-8</ComboBoxItem>
+                                <ComboBoxItem>ASCII</ComboBoxItem>
+                                <ComboBoxItem>GB2312</ComboBoxItem>
+                                <ComboBoxItem>UTF-16LE</ComboBoxItem>
+                                <ComboBoxItem>UTF-16BE</ComboBoxItem>
+                                <ComboBoxItem>Big5</ComboBoxItem>
                             </ComboBox>
                             <Button Content="清空" Click="OnClearReceive" VerticalAlignment="Center" />
                         </StackPanel>
@@ -143,9 +148,14 @@
                                 <ComboBoxItem>HEX</ComboBoxItem>
                                 <ComboBoxItem>文本</ComboBoxItem>
                             </ComboBox>
-                            <ComboBox x:Name="SendCodingCombo" Header="编码" SelectedIndex="0" Width="100">
+                            <ComboBox x:Name="SendCodingCombo" Header="编码" SelectedIndex="0" Width="110">
                                 <ComboBoxItem>GBK</ComboBoxItem>
                                 <ComboBoxItem>UTF-8</ComboBoxItem>
+                                <ComboBoxItem>ASCII</ComboBoxItem>
+                                <ComboBoxItem>GB2312</ComboBoxItem>
+                                <ComboBoxItem>UTF-16LE</ComboBoxItem>
+                                <ComboBoxItem>UTF-16BE</ComboBoxItem>
+                                <ComboBoxItem>Big5</ComboBoxItem>
                             </ComboBox>
                             <Button Content="清空" Click="OnClearSend" VerticalAlignment="Center" />
                         </StackPanel>
@@ -260,9 +270,14 @@
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <TextBlock Text="编码" FontSize="11" VerticalAlignment="Center"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                <ComboBox x:Name="ShellCodingCombo" SelectedIndex="0" Width="80">
+                                <ComboBox x:Name="ShellCodingCombo" SelectedIndex="0" Width="110">
                                     <ComboBoxItem>GBK</ComboBoxItem>
                                     <ComboBoxItem>UTF-8</ComboBoxItem>
+                                    <ComboBoxItem>ASCII</ComboBoxItem>
+                                    <ComboBoxItem>GB2312</ComboBoxItem>
+                                    <ComboBoxItem>UTF-16LE</ComboBoxItem>
+                                    <ComboBoxItem>UTF-16BE</ComboBoxItem>
+                                    <ComboBoxItem>Big5</ComboBoxItem>
                                 </ComboBox>
                             </StackPanel>
                         </StackPanel>

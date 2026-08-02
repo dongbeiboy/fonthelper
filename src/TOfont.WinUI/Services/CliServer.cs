@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace TOfont.WinUI.Services;
 
@@ -16,7 +17,8 @@ namespace TOfont.WinUI.Services;
 ///   POST /api/open                → 打开串口 {port, baud, dataBits, stopBits, parity}
 ///   POST /api/close               → 关闭串口
 ///   POST /api/send                → 发送 {data, mode:"hex"|"text", encoding:"gbk"|"utf-8"}
-///   GET  /api/read?format=hex     → 读取并清空接收数据 {data, bytes}
+///   GET  /api/read?format=hex     → 读取并清空接收数据 {data, bytes}（拉模式）
+///   GET  /api/stream?format=hex   → SSE 长连接实时推送接收数据（推模式，EventSource 可直接消费）
 /// </summary>
 public sealed class CliServer : IDisposable
 {
@@ -174,6 +176,13 @@ public sealed class CliServer : IDisposable
             return;
         }
 
+        // SSE 长连接：实时推送串口数据。不能占串行 gate，否则挂一个流会把其他请求全堵死
+        if (method == "GET" && target.Split('?')[0] == "/api/stream")
+        {
+            await HandleSseAsync(stream, target);
+            return;
+        }
+
         // 串行处理，避免并发操作同一串口
         await _gate.WaitAsync();
         string payload;
@@ -188,6 +197,85 @@ public sealed class CliServer : IDisposable
         }
 
         await WriteResponseAsync(stream, statusCode, payload, allowCors: true);
+    }
+
+    /// <summary>
+    /// SSE 端点：订阅串口接收事件，实时推送 text/event-stream。
+    /// 客户端断开或服务停止时自动清理订阅。
+    /// </summary>
+    private async Task HandleSseAsync(NetworkStream stream, string target)
+    {
+        var query = target.Contains('?') ? target[(target.IndexOf('?') + 1)..] : "";
+        var format = GetQueryValue(query, "format");
+        if (format is not ("hex" or "text")) format = "hex";
+        var encoding = GetQueryValue(query, "encoding");
+
+        // 响应头：text/event-stream，长连接，不写 Content-Length（客户端按帧解析）
+        var header = new StringBuilder()
+            .Append("HTTP/1.1 200 OK\r\n")
+            .Append("Content-Type: text/event-stream; charset=utf-8\r\n")
+            .Append("Cache-Control: no-cache\r\n")
+            .Append("Access-Control-Allow-Origin: *\r\n")
+            .Append("Connection: keep-alive\r\n")
+            .Append("\r\n");
+        await stream.WriteAsync(Encoding.ASCII.GetBytes(header.ToString()));
+        await stream.FlushAsync();
+
+        // 数据管道：串口事件 → Channel → 推送；客户端断开时退订
+        var channel = Channel.CreateUnbounded<byte[]>();
+        void OnRx(byte[] chunk) => channel.Writer.TryWrite(chunk);
+        _service.DataReceivedBlock += OnRx;
+        try
+        {
+            var ct = _cts?.Token ?? CancellationToken.None;
+            while (!ct.IsCancellationRequested)
+            {
+                // 等数据或心跳超时（15s），无数据时发注释帧保活
+                var dataTask = channel.Reader.WaitToReadAsync(ct).AsTask();
+                var heartbeat = Task.Delay(TimeSpan.FromSeconds(15), ct);
+                var done = await Task.WhenAny(dataTask, heartbeat);
+                if (ct.IsCancellationRequested) break;
+
+                if (done == dataTask && dataTask.IsCompletedSuccessfully && dataTask.Result)
+                {
+                    while (channel.Reader.TryRead(out var chunk))
+                        await WriteSseEventAsync(stream, "data", BuildSsePayload(chunk, format, encoding));
+                    continue;
+                }
+                await WriteSseCommentAsync(stream, "ping");
+            }
+        }
+        catch (IOException) { /* 客户端断开 */ }
+        catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) { }
+        finally
+        {
+            _service.DataReceivedBlock -= OnRx;
+        }
+    }
+
+    private string BuildSsePayload(byte[] chunk, string format, string encoding)
+    {
+        var data = format == "text"
+            ? SerialPortCliService.BytesToText(chunk, encoding)
+            : SerialPortCliService.BytesToHex(chunk);
+        return Json(new { bytes = chunk.Length, format, data });
+    }
+
+    private static async Task WriteSseEventAsync(NetworkStream stream, string evt, string data)
+    {
+        var frame = new StringBuilder()
+            .Append("event: ").Append(evt).Append("\r\n")
+            .Append("data: ").Append(data).Append("\r\n")
+            .Append("\r\n");
+        await stream.WriteAsync(Encoding.UTF8.GetBytes(frame.ToString()));
+        await stream.FlushAsync();
+    }
+
+    private static async Task WriteSseCommentAsync(NetworkStream stream, string comment)
+    {
+        await stream.WriteAsync(Encoding.ASCII.GetBytes(": " + comment + "\r\n\r\n"));
+        await stream.FlushAsync();
     }
 
     private (int Code, string Payload) Route(string method, string target, byte[]? body)

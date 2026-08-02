@@ -33,10 +33,11 @@ public sealed partial class SettingsPage : Page
 
     private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (SettingsPanel == null || CliPanel == null || AboutPanel == null) return;
+        if (SettingsPanel == null || SerialPanel == null || CliPanel == null || AboutPanel == null) return;
         if (NavList.SelectedItem is ListViewItem item && item.Tag is string tag)
         {
             SettingsPanel.Visibility = tag == "settings" ? Visibility.Visible : Visibility.Collapsed;
+            SerialPanel.Visibility = tag == "serial" ? Visibility.Visible : Visibility.Collapsed;
             CliPanel.Visibility = tag == "cli" ? Visibility.Visible : Visibility.Collapsed;
             AboutPanel.Visibility = tag == "about" ? Visibility.Visible : Visibility.Collapsed;
         }

@@ -23,6 +23,10 @@
                     Padding="16,10">
                     <TextBlock Text="取模设置" FontSize="14" />
                 </ListViewItem>
+                <ListViewItem x:Name="NavSerial" Tag="serial"
+                    Padding="16,10">
+                    <TextBlock Text="串口助手" FontSize="14" />
+                </ListViewItem>
                 <ListViewItem x:Name="NavCli" Tag="cli"
                     Padding="16,10">
                     <TextBlock Text="CLI 服务" FontSize="14" />
@@ -54,11 +58,17 @@
                         IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
                     <CheckBox x:Name="UseHexChk" Content="16进制输出"
                         IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
+                </StackPanel>
 
-                    <Border Height="1" Margin="0,8,0,0"
-                        Background="{ThemeResource DividerStrokeColorDefault}" />
+                <!-- 串口助手子页面 -->
+                <StackPanel x:Name="SerialPanel" Spacing="16" Padding="40,24" Visibility="Collapsed">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="串口助手" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock FontSize="12" TextWrapping="Wrap"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Shell 终端相关设置。" />
+                    </StackPanel>
 
-                    <TextBlock Text="串口助手" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
                     <CheckBox x:Name="AutoScrollChk" Content="Shell 终端自动滚动"
                         IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
                 </StackPanel>
@@ -100,6 +110,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -150,6 +161,12 @@
                         <TextBlock Grid.Row="6" Grid.Column="1" Text="/api/read?format=hex" FontFamily="Consolas" FontSize="12" />
                         <TextBlock Grid.Row="6" Grid.Column="2" Text="读取并清空接收数据 (format: hex|text)" FontSize="12"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <TextBlock Text="GET" Grid.Row="7" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="/api/stream?format=hex" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="7" Grid.Column="2" Text="SSE 实时推送接收数据 (format: hex|text)" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </Grid>
 
                     <Border Height="1" Margin="0,8,0,0"
@@ -158,7 +175,7 @@
                     <TextBlock Text="调用示例 (PowerShell)" FontSize="16" FontWeight="SemiBold" />
                     <TextBlock FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="# 打开串口 COM3 @ 115200&#x0a;curl -X POST http://127.0.0.1:8765/api/open -H &quot;Content-Type: application/json&quot; -d '{&quot;port&quot;:&quot;COM3&quot;,&quot;baud&quot;:115200,&quot;dataBits&quot;:8,&quot;stopBits&quot;:&quot;1&quot;,&quot;parity&quot;:&quot;None&quot;}'&#x0a;&#x0a;# 发送 HEX&#x0a;curl -X POST http://127.0.0.1:8765/api/send -H &quot;Content-Type: application/json&quot; -d '{&quot;data&quot;:&quot;AA 55 01 FF&quot;,&quot;mode&quot;:&quot;hex&quot;}'&#x0a;&#x0a;# 读取接收数据&#x0a;curl &quot;http://127.0.0.1:8765/api/read?format=hex&quot;" />
+                        Text="# 打开串口 COM3 @ 115200&#x0a;curl -X POST http://127.0.0.1:8765/api/open -H &quot;Content-Type: application/json&quot; -d '{&quot;port&quot;:&quot;COM3&quot;,&quot;baud&quot;:115200,&quot;dataBits&quot;:8,&quot;stopBits&quot;:&quot;1&quot;,&quot;parity&quot;:&quot;None&quot;}'&#x0a;&#x0a;# 发送 HEX&#x0a;curl -X POST http://127.0.0.1:8765/api/send -H &quot;Content-Type: application/json&quot; -d '{&quot;data&quot;:&quot;AA 55 01 FF&quot;,&quot;mode&quot;:&quot;hex&quot;}'&#x0a;&#x0a;# 读取接收数据（拉模式）&#x0a;curl &quot;http://127.0.0.1:8765/api/read?format=hex&quot;&#x0a;&#x0a;# SSE 实时推送（推模式，Ctrl+C 断开）&#x0a;curl -N &quot;http://127.0.0.1:8765/api/stream?format=hex&quot;" />
                 </StackPanel>
 
                 <StackPanel x:Name="AboutPanel" Spacing="16" Padding="40,24" Visibility="Collapsed">

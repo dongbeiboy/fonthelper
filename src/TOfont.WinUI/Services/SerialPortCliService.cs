@@ -15,6 +15,9 @@ public sealed class SerialPortCliService : IDisposable
     private readonly ConcurrentQueue<byte> _rxQueue = new();
     private bool _disposed;
 
+    /// <summary>接收数据事件（整块字节），供 SSE 实时推送订阅。</summary>
+    public event Action<byte[]>? DataReceivedBlock;
+
     public bool IsOpen => _port.IsOpen;
 
     public string? PortName => _port.PortName;
@@ -38,6 +41,8 @@ public sealed class SerialPortCliService : IDisposable
             var read = _port.Read(data, 0, count);
             for (var i = 0; i < read; i++)
                 _rxQueue.Enqueue(data[i]);
+            // 触发 SSE 推送（Channel.TryWrite 线程安全，不会影响串口线程）
+            DataReceivedBlock?.Invoke(data[..read]);
         }
         catch { /* 端口关闭竞态，忽略 */ }
     }
