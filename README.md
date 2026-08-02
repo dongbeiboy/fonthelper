@@ -1,8 +1,16 @@
-# TOfont（fonthelper）
+# TOfont（toolbox）
 
 嵌入式开发工具箱，基于 .NET 9 + WinUI 3。采用工具注册驱动导航的架构，可以持续扩展新工具。
 
 当前版本：**v1.0.2**
+
+## 仓库结构
+
+```
+.
+├── toolbox/   # 项目源码（src 目录，见下）
+└── wiki/      # GitHub Wiki（文档）
+```
 
 ## 工具列表
 
@@ -25,7 +33,7 @@
 ## 项目结构
 
 ```
-src/
+toolbox/src/
 ├── TOfont.Core/       # 核心库 — 提取、格式化、解析
 │   ├── Extraction/    # 文字取模、图片取模、点阵转换
 │   ├── Formatting/    # 代码输出格式化
@@ -51,10 +59,10 @@ src/
 
 ```bash
 # 核心库与 CLI
-dotnet build TOfont.sln
+cd toolbox && dotnet build TOfont.sln
 
 # WinUI 应用（Debug，x64）
-dotnet build src/TOfont.WinUI/TOfont.WinUI.csproj -p:Platform=x64
+cd toolbox && dotnet build src/TOfont.WinUI/TOfont.WinUI.csproj -p:Platform=x64
 ```
 
 > 提示：构建前若应用正在运行，需先结束进程，否则 exe 被占用会导致构建失败：
