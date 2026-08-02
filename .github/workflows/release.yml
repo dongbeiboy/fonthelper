@@ -33,6 +33,16 @@ jobs:
           Remove-Item -Path publish/*.deps.json -Force -ErrorAction SilentlyContinue
           Remove-Item -Path publish/*.runtimeconfig.json -Force -ErrorAction SilentlyContinue
 
+      - name: Build installer with Inno Setup
+        run: |
+          $version = "${{ github.ref_name }}" -replace "^v", ""
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          & $iscc "installer/installer.iss" /DMyAppVersion=$version /O"$env:GITHUB_WORKSPACE"
+          Get-ChildItem TOfont-setup-*.exe | Select-Object Name, Length
+
       - name: Pack to folder and zip
         run: |
           mkdir TOfont
@@ -56,5 +66,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: TOfont-win-x64.zip
+          files: |
+            TOfont-win-x64.zip
+            TOfont-setup-*.exe
           body: ${{ steps.changelog.outputs.changelog }}

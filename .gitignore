@@ -42,6 +42,8 @@ sucaibao/
 # .NET build output
 bin/
 obj/
+publish/
+installer/Output/
 
 # Visual Studio (machine-local, NOT shared)
 .vs/
