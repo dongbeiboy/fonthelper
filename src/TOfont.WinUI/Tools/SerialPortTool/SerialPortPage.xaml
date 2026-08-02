@@ -4,6 +4,23 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls">
 
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="TerminalBackgroundBrush" Color="#EDEDED" />
+                    <SolidColorBrush x:Key="TerminalTitleBarBrush" Color="#E0E0E0" />
+                    <SolidColorBrush x:Key="TerminalPromptBrush" Color="#0067C0" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="TerminalBackgroundBrush" Color="#1E1E1E" />
+                    <SolidColorBrush x:Key="TerminalTitleBarBrush" Color="#2D2D30" />
+                    <SolidColorBrush x:Key="TerminalPromptBrush" Color="#00C8FF" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="280" />
@@ -15,7 +32,9 @@
         </Grid.RowDefinitions>
 
         <!-- 左侧：串口配置（Fluent 卡片） -->
-        <ScrollViewer Grid.Column="0" Padding="16">
+        <!-- 隐藏垂直滚动条：内容固定几项，不需要滚动条占位 -->
+        <ScrollViewer Grid.Column="0" Padding="16"
+            VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
             <Border CornerRadius="8" Padding="16"
                 Background="{ThemeResource CardBackgroundFillColorDefault}"
                 BorderBrush="{ThemeResource CardStrokeColorDefault}"
@@ -24,7 +43,7 @@
                     <TextBlock Text="串口配置" FontWeight="SemiBold" FontSize="16" />
 
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                        <ComboBox x:Name="PortCombo" Header="端口" Width="170" DropDownOpened="OnPortDropDown" />
+                        <ComboBox x:Name="PortCombo" Header="端口" Width="150" DropDownOpened="OnPortDropDown" />
                         <Button Content="刷新" Click="OnRefreshPorts" VerticalAlignment="Bottom" Margin="0,0,0,2" />
                     </StackPanel>
 
@@ -69,8 +88,9 @@
         </ScrollViewer>
 
         <!-- 右侧：调试助手 / Shell 终端（TabView 自带标签条分隔线） -->
-        <TabView x:Name="ModeTabView" Grid.Column="1" Margin="12,12,12,8"
+        <TabView x:Name="ModeTabView" Grid.Column="1" Grid.Row="0" Margin="12,12,12,8"
             IsAddTabButtonVisible="False" TabWidthMode="SizeToContent"
+            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
             SelectionChanged="OnModeTabChanged">
 
             <!-- Tab 1: 调试助手 -->
@@ -138,53 +158,116 @@
                 </Grid>
             </TabViewItem>
 
-            <!-- Tab 2: Shell 终端（Windows Terminal 风格） -->
+            <!-- Tab 2: Shell 终端（圆角终端：标题栏 + 输出区 + 输入行 + 状态栏） -->
             <TabViewItem Header="Shell 终端">
-                <Border CornerRadius="8" Background="#1E1E1E" Padding="12">
+                <Border CornerRadius="8" Background="{ThemeResource TerminalBackgroundBrush}"
+                    BorderBrush="{ThemeResource TerminalTitleBarBrush}" BorderThickness="1">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="36" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="30" />
                         </Grid.RowDefinitions>
 
-                        <!-- 终端工具栏 -->
-                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                            <TextBlock Text="终端" FontWeight="SemiBold" VerticalAlignment="Center"
-                                Foreground="#CCCCCC" />
-                            <ComboBox x:Name="ShellModeCombo" Header="输入模式" SelectedIndex="0" Width="130"
-                                Background="#333333" Foreground="White"
-                                SelectionChanged="OnShellModeChanged">
-                                <ComboBoxItem>行模式</ComboBoxItem>
-                                <ComboBoxItem>字符直通</ComboBoxItem>
-                            </ComboBox>
-                            <ComboBox x:Name="ShellCodingCombo" Header="编码" SelectedIndex="0" Width="100"
-                                Background="#333333" Foreground="White">
-                                <ComboBoxItem>GBK</ComboBoxItem>
-                                <ComboBoxItem>UTF-8</ComboBoxItem>
-                            </ComboBox>
-                            <Button Content="清空" Click="OnClearShell" VerticalAlignment="Center" />
+                    <!-- 终端标题栏：macOS 三圆点 + 标题 + 清空 -->
+                    <Grid Grid.Row="0" Background="{ThemeResource TerminalTitleBarBrush}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,0,0,0"
+                            VerticalAlignment="Center">
+                            <Ellipse Width="12" Height="12" Fill="#FF5F56" />
+                            <Ellipse Width="12" Height="12" Fill="#FFBD2E" />
+                            <Ellipse Width="12" Height="12" Fill="#27C93F" />
+                            <TextBlock Text="Shell" FontSize="12" FontWeight="SemiBold"
+                                Margin="8,0,0,0" VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                            Margin="0,0,8,0" VerticalAlignment="Center">
+                            <DropDownButton Content="信号" Padding="8,2" FontSize="12">
+                                <DropDownButton.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem Text="Ctrl+C  (中断 / 0x03)" Click="OnShellSendCtrlC" />
+                                        <MenuFlyoutItem Text="Ctrl+D  (EOF / 0x04)" Click="OnShellSendCtrlD" />
+                                        <MenuFlyoutItem Text="Ctrl+Z  (挂起 / 0x1A)" Click="OnShellSendCtrlZ" />
+                                        <MenuFlyoutItem Text="发送 Enter (\r)" Click="OnShellSendEnter" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem Text="清空屏幕" Click="OnClearShell" />
+                                    </MenuFlyout>
+                                </DropDownButton.Flyout>
+                            </DropDownButton>
+                            <Button Content="Ctrl+C" Click="OnShellSendCtrlC"
+                                Padding="8,2" FontSize="12" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
 
-                        <!-- 终端输出区（深色，等宽） -->
-                        <TextBox x:Name="ShellOutputBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
-                            TextWrapping="NoWrap" FontFamily="Consolas" FontSize="14"
-                            Background="Transparent" Foreground="#E6E6E6" BorderThickness="0"
-                            ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                    <!-- 终端输出区：满铺，无边框 -->
+                    <TextBox x:Name="ShellOutputBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                        TextWrapping="NoWrap" FontFamily="Consolas" FontSize="14"
+                        Background="Transparent" Foreground="{ThemeResource TextFillColorPrimaryBrush}" BorderThickness="0"
+                        Padding="12,8"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
 
-                        <!-- 终端输入行：提示符 + 输入框（重叠布局，严格对齐） -->
-                        <Grid Grid.Row="2" Margin="0,8,0,0">
+                    <!-- 终端输入行：提示符 + 输入框（可展开多行）+ 发送/展开按钮 -->
+                    <Grid Grid.Row="2" Background="{ThemeResource TerminalTitleBarBrush}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
                             <TextBox x:Name="ShellInputBox"
                                 PlaceholderText="输入命令，Enter 发送（↑↓ 历史）"
                                 FontFamily="Consolas" FontSize="14"
-                                Background="Transparent" Foreground="White" BorderThickness="0"
-                                Padding="26,0,0,0"
+                                Background="Transparent" Foreground="{ThemeResource TextFillColorPrimaryBrush}" BorderThickness="0"
+                                VerticalContentAlignment="Center" Height="40"
+                                Padding="26,12,8,12"
                                 KeyDown="OnShellInputKeyDown" TextChanged="OnShellInputChanged" />
                             <TextBlock Text="&gt;" FontFamily="Consolas" FontSize="14"
-                                Foreground="#00C8FF" VerticalAlignment="Center"
+                                Foreground="{ThemeResource TerminalPromptBrush}" VerticalAlignment="Center"
                                 Margin="8,0,0,0" IsHitTestVisible="False" />
                         </Grid>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                            Margin="0,0,8,0" VerticalAlignment="Bottom">
+                            <Button x:Name="ShellSendBtn" Content="发送" Click="OnShellSend"
+                                Padding="10,4" FontSize="12" VerticalAlignment="Center"
+                                Visibility="Collapsed" />
+                            <Button x:Name="ShellExpandBtn" Click="OnShellToggleExpand"
+                                Padding="8,4" FontSize="12" VerticalAlignment="Center">
+                                <FontIcon x:Name="ShellExpandGlyph" Glyph="&#xE70D;" FontSize="12" />
+                            </Button>
+                        </StackPanel>
                     </Grid>
+
+                    <!-- 终端状态栏：输入模式 / 编码 -->
+                    <Grid Grid.Row="3" Background="{ThemeResource TerminalTitleBarBrush}">
+                        <StackPanel Orientation="Horizontal" Spacing="12" Margin="12,0,0,0"
+                            VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock Text="模式" FontSize="11" VerticalAlignment="Center"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <ComboBox x:Name="ShellModeCombo" SelectedIndex="0" Width="110"
+                                    SelectionChanged="OnShellModeChanged">
+                                    <ComboBoxItem>仿真终端</ComboBoxItem>
+                                    <ComboBoxItem>透传模式</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock Text="编码" FontSize="11" VerticalAlignment="Center"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <ComboBox x:Name="ShellCodingCombo" SelectedIndex="0" Width="80">
+                                    <ComboBoxItem>GBK</ComboBoxItem>
+                                    <ComboBoxItem>UTF-8</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
                 </Border>
             </TabViewItem>
         </TabView>

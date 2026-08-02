@@ -13,7 +13,7 @@ namespace TOfont.WinUI.Tools.SerialPortTool;
 /// <summary>
 /// 串口助手 — 参考 sucaibao/串口助手 (WinForms V1.1) 重写的 WinUI 3 版本。
 /// 功能对齐原版：串口配置、HEX/文本收发、GBK/UTF-8 编码、多字节分包缓冲。
-/// 内置 Shell 终端（类 PuTTY）：行模式（命令历史）/ 字符直通，仅远端回显。
+/// 内置 Shell 终端：仿真终端模式（退格/回车/ANSI 解析 + 命令历史）/ 透传模式。
 /// </summary>
 public sealed partial class SerialPortPage : Page
 {
@@ -24,7 +24,9 @@ public sealed partial class SerialPortPage : Page
     private readonly List<byte> _receiveBuffer = new();
 
     // Shell 终端状态
-    private bool _shellPassthrough;         // 字符直通模式
+    private readonly TerminalEmulator _emulator = new();
+    private bool _shellPassthrough;         // true = 透传模式（原始字节原样显示）
+    private bool _shellExpanded;            // true = 输入框多行展开态
     private bool _clearingShellInput;       // 防止清空输入框时递归触发
     private string _lastShellInputText = "";
     private readonly List<string> _shellHistory = new();
@@ -360,14 +362,16 @@ public sealed partial class SerialPortPage : Page
         _shellPassthrough = ShellModeCombo.SelectedIndex == 1;
         _lastShellInputText = "";
         _shellHistoryIndex = -1;
+        // 模式切换时重置仿真器，避免行状态串扰
+        _emulator.Clear();
         // Pivot 懒加载：ShellInputBox 可能尚未创建，判空保护
         if (ShellInputBox == null) return;
         _clearingShellInput = true;
         ShellInputBox.Text = "";
         _clearingShellInput = false;
         ShellInputBox.PlaceholderText = _shellPassthrough
-            ? "直通模式：输入即发送（仅远端回显）"
-            : "输入命令，Enter 发送（↑↓ 历史）";
+            ? "透传模式：输入即发送（仅远端回显）"
+            : "仿真终端：输入命令，Enter 发送（↑↓ 历史）";
     }
 
     private void OnShellInputKeyDown(object sender, KeyRoutedEventArgs e)
@@ -376,6 +380,10 @@ public sealed partial class SerialPortPage : Page
 
         if (e.Key == VirtualKey.Enter)
         {
+            // 多行模式：Enter 换行，Ctrl+Enter 发送
+            var ctrl = (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control)
+                & Windows.UI.Core.CoreVirtualKeyStates.Down) != 0;
+            if (_shellExpanded && !ctrl) return; // 不拦截，让文本框插入换行
             SendShellLine();
             e.Handled = true;
         }
@@ -454,15 +462,30 @@ public sealed partial class SerialPortPage : Page
     }
 
     /// <summary>
-    /// 向终端输出区追加文本并自动滚动到底部
+    /// 向终端输出区追加文本并自动滚动到底部。
+    /// 仿真终端模式：过 TerminalEmulator 处理退格/回车/ANSI，全量替换（回车会覆盖历史行）。
+    /// 透传模式：原始文本原样追加。
     /// </summary>
     private void AppendShellOutput(string text)
     {
-        ShellOutputBox.Text += text;
+        if (_shellPassthrough)
+        {
+            ShellOutputBox.Text += text;
+        }
+        else
+        {
+            _emulator.Feed(text);
+            ShellOutputBox.Text = _emulator.Text;
+        }
         if (ShellOutputBox.Text.Length > 50000)
             ShellOutputBox.Text = ShellOutputBox.Text[^25000..];
-        ShellOutputBox.SelectionStart = ShellOutputBox.Text.Length;
-        ShellOutputBox.SelectionLength = 0;
+
+        // 自动滚动开关（设置 → 串口助手 → Shell 终端自动滚动）
+        if (AppSettings.ShellAutoScroll)
+        {
+            ShellOutputBox.SelectionStart = ShellOutputBox.Text.Length;
+            ShellOutputBox.SelectionLength = 0;
+        }
     }
 
     private void SendShellBytes(string text)
@@ -484,5 +507,50 @@ public sealed partial class SerialPortPage : Page
         }
     }
 
-    private void OnClearShell(object sender, RoutedEventArgs e) => ShellOutputBox.Text = "";
+    private void OnClearShell(object sender, RoutedEventArgs e)
+    {
+        _emulator.Clear();
+        ShellOutputBox.Text = "";
+    }
+
+    // ========== 信号发送（终端中断/EOF 等） ==========
+
+    private void OnShellSendCtrlC(object sender, RoutedEventArgs e) => SendShellBytes("\x03");
+    private void OnShellSendCtrlD(object sender, RoutedEventArgs e) => SendShellBytes("\x04");
+    private void OnShellSendCtrlZ(object sender, RoutedEventArgs e) => SendShellBytes("\x1a");
+    private void OnShellSendEnter(object sender, RoutedEventArgs e) => SendShellBytes("\r");
+
+    /// <summary>展开/收起输入框为多行模式。</summary>
+    private void OnShellToggleExpand(object sender, RoutedEventArgs e)
+    {
+        _shellExpanded = !_shellExpanded;
+        if (_shellExpanded)
+        {
+            // 多行：铺满剩余高度，AcceptsReturn 允许换行，Ctrl+Enter 发送
+            ShellInputBox.AcceptsReturn = true;
+            ShellInputBox.TextWrapping = TextWrapping.Wrap;
+            ShellInputBox.Height = double.NaN;
+            ShellInputBox.VerticalContentAlignment = VerticalAlignment.Top;
+            ShellInputBox.Padding = new Thickness(26, 8, 8, 8);
+            ShellInputBox.MinHeight = 120;
+            ShellInputBox.PlaceholderText = "多行输入（Enter 换行，Ctrl+Enter 发送）";
+            ShellSendBtn.Visibility = Visibility.Visible;
+            ShellExpandGlyph.Glyph = "\uE70E"; // ChevronUp
+        }
+        else
+        {
+            // 单行：Enter 发送，↑↓ 历史
+            ShellInputBox.AcceptsReturn = false;
+            ShellInputBox.TextWrapping = TextWrapping.NoWrap;
+            ShellInputBox.Height = 40;
+            ShellInputBox.VerticalContentAlignment = VerticalAlignment.Center;
+            ShellInputBox.Padding = new Thickness(26, 12, 8, 12);
+            ShellInputBox.PlaceholderText = _shellPassthrough
+                ? "透传模式：输入即发送（仅远端回显）"
+                : "输入命令，Enter 发送（↑↓ 历史）";
+            ShellSendBtn.Visibility = Visibility.Collapsed;
+            ShellExpandGlyph.Glyph = "\uE70D"; // ChevronDown
+        }
+        ShellInputBox.Focus(FocusState.Programmatic);
+    }
 }

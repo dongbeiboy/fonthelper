@@ -39,6 +39,11 @@
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" Spacing="12"
                 VerticalAlignment="Center" Margin="16,0,0,0">
+                <Button x:Name="PaneToggleBtn" Click="OnTogglePane"
+                    Background="Transparent" BorderThickness="0" Padding="6"
+                    ToolTipService.ToolTip="折叠 / 展开导航">
+                    <FontIcon Glyph="&#xE700;" FontSize="14" />
+                </Button>
                 <Border Width="28" Height="28" CornerRadius="7"
                     Background="{ThemeResource AccentFillColorDefaultBrush}">
                     <FontIcon Glyph="&#xE943;" FontSize="14" Foreground="White"

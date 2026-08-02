@@ -23,6 +23,10 @@
                     Padding="16,10">
                     <TextBlock Text="取模设置" FontSize="14" />
                 </ListViewItem>
+                <ListViewItem x:Name="NavCli" Tag="cli"
+                    Padding="16,10">
+                    <TextBlock Text="CLI 服务" FontSize="14" />
+                </ListViewItem>
                 <ListViewItem x:Name="NavAbout" Tag="about"
                     Padding="16,10">
                     <TextBlock Text="关于" FontSize="14" />
@@ -50,6 +54,111 @@
                         IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
                     <CheckBox x:Name="UseHexChk" Content="16进制输出"
                         IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
+
+                    <Border Height="1" Margin="0,8,0,0"
+                        Background="{ThemeResource DividerStrokeColorDefault}" />
+
+                    <TextBlock Text="串口助手" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <CheckBox x:Name="AutoScrollChk" Content="Shell 终端自动滚动"
+                        IsChecked="True" Checked="OnSettingChanged" Unchecked="OnSettingChanged" />
+                </StackPanel>
+
+                <!-- CLI 服务子页面 -->
+                <StackPanel x:Name="CliPanel" Spacing="16" Padding="40,24" Visibility="Collapsed">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="CLI 服务" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock FontSize="12" TextWrapping="Wrap"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="通过本地 HTTP 接口让 agent 工具通过网络使用串口助手。仅监听本机 127.0.0.1，不对外网开放。" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <ToggleSwitch x:Name="CliToggle" Header="启用"
+                            OffContent="关闭" OnContent="运行中"
+                            Toggled="OnCliToggled" />
+                        <NumberBox x:Name="CliPortBox" Header="端口" Minimum="1024" Maximum="65535"
+                            Value="8765" SpinButtonPlacementMode="Compact" Width="140"
+                            ValueChanged="OnCliPortChanged" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="CliStatusText" FontSize="13"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="未运行" />
+
+                    <TextBlock x:Name="CliErrorText" FontSize="12" TextWrapping="Wrap"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        Visibility="Collapsed" />
+
+                    <Border Height="1" Margin="0,8,0,0"
+                        Background="{ThemeResource DividerStrokeColorDefault}" />
+
+                    <TextBlock Text="接口说明" FontSize="16" FontWeight="SemiBold" />
+                    <Grid ColumnSpacing="12" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="GET" Grid.Row="0" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="/api/health" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="健康检查" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <TextBlock Text="GET" Grid.Row="1" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="/api/ports" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="枚举串口列表" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <TextBlock Text="GET" Grid.Row="2" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="/api/status" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="当前串口连接状态" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <TextBlock Text="POST" Grid.Row="3" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="/api/open" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="打开串口 {port, baud, dataBits, stopBits, parity}" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <TextBlock Text="POST" Grid.Row="4" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="/api/close" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="关闭串口" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <TextBlock Text="POST" Grid.Row="5" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="/api/send" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="5" Grid.Column="2" Text="发送 {data, mode: hex|text, encoding: gbk|utf-8}" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <TextBlock Text="GET" Grid.Row="6" FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="/api/read?format=hex" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Grid.Row="6" Grid.Column="2" Text="读取并清空接收数据 (format: hex|text)" FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </Grid>
+
+                    <Border Height="1" Margin="0,8,0,0"
+                        Background="{ThemeResource DividerStrokeColorDefault}" />
+
+                    <TextBlock Text="调用示例 (PowerShell)" FontSize="16" FontWeight="SemiBold" />
+                    <TextBlock FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="# 打开串口 COM3 @ 115200&#x0a;curl -X POST http://127.0.0.1:8765/api/open -H &quot;Content-Type: application/json&quot; -d '{&quot;port&quot;:&quot;COM3&quot;,&quot;baud&quot;:115200,&quot;dataBits&quot;:8,&quot;stopBits&quot;:&quot;1&quot;,&quot;parity&quot;:&quot;None&quot;}'&#x0a;&#x0a;# 发送 HEX&#x0a;curl -X POST http://127.0.0.1:8765/api/send -H &quot;Content-Type: application/json&quot; -d '{&quot;data&quot;:&quot;AA 55 01 FF&quot;,&quot;mode&quot;:&quot;hex&quot;}'&#x0a;&#x0a;# 读取接收数据&#x0a;curl &quot;http://127.0.0.1:8765/api/read?format=hex&quot;" />
                 </StackPanel>
 
                 <StackPanel x:Name="AboutPanel" Spacing="16" Padding="40,24" Visibility="Collapsed">
@@ -80,6 +189,15 @@
                         <HyperlinkButton NavigateUri="https://github.com/dongbeiboy/fonthelper"
                             Content="github.com/dongbeiboy/fonthelper"
                             FontSize="13" Padding="0" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8" Margin="0,16,0,0">
+                        <TextBlock Text="更新" FontSize="16" FontWeight="SemiBold" />
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button x:Name="CheckUpdateBtn" Content="检查更新" Click="OnCheckUpdate" />
+                            <TextBlock x:Name="UpdateStatusText" FontSize="12" VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="" />
+                        </StackPanel>
                     </StackPanel>
 
                     <StackPanel Spacing="4" Margin="0,16,0,0">

@@ -212,8 +212,21 @@ public sealed partial class MainWindow : Window
         var scale = TitleBarArea.XamlRoot.RasterizationScale;
         var w = (int)(TitleBarArea.ActualWidth * scale);
         var h = (int)(TitleBarArea.ActualHeight * scale);
-        var rects = new[] { new Windows.Graphics.RectInt32(0, 0, w, h) };
+        // 左侧约 60px 留给折叠按钮（可点击），其余区域为拖拽区
+        var btnEnd = (int)(60 * scale);
+        var colEnd = (int)(200 * scale);
+        var rects = new[]
+        {
+            new Windows.Graphics.RectInt32(btnEnd, 0, colEnd - btnEnd, h),
+            new Windows.Graphics.RectInt32(colEnd, 0, w - colEnd, h)
+        };
         AppWindow.TitleBar.SetDragRectangles(rects);
+    }
+
+    /// <summary>标题栏汉堡按钮：折叠/展开左侧导航。</summary>
+    private void OnTogglePane(object sender, RoutedEventArgs e)
+    {
+        NavView.IsPaneOpen = !NavView.IsPaneOpen;
     }
 
     private void SetWindowIcon()
