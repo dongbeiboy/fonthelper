@@ -430,7 +430,16 @@ public sealed partial class SerialPortPage : Page
 
     private void OnShellInputKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (_shellPassthrough) return;
+        if (_shellPassthrough)
+        {
+            // 透传模式：Enter 不产生文本变化（TextChanged 捕不到），这里直接发 \r
+            if (e.Key == VirtualKey.Enter)
+            {
+                SendShellBytes("\r");
+                e.Handled = true;
+            }
+            return;
+        }
 
         if (e.Key == VirtualKey.Enter)
         {
