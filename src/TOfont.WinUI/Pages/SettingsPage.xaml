@@ -89,6 +89,9 @@
                         <NumberBox x:Name="CliPortBox" Header="端口" Minimum="1024" Maximum="65535"
                             Value="8765" SpinButtonPlacementMode="Compact" Width="140"
                             ValueChanged="OnCliPortChanged" />
+                        <Button x:Name="CliRandomPortBtn" Content="随机"
+                            Click="OnCliRandomPort" VerticalAlignment="Bottom" Margin="0,0,0,6"
+                            ToolTipService.ToolTip="随机选择一个端口" />
                     </StackPanel>
 
                     <TextBlock x:Name="CliStatusText" FontSize="13"

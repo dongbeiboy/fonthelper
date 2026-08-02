@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
 using System.Net.Http;
 using System.Text.Json;
 
@@ -87,6 +88,17 @@ public sealed partial class SettingsPage : Page
     {
         if (!_loaded || double.IsNaN(args.NewValue)) return;
         AppSettings.CliPort = (int)args.NewValue;
+    }
+
+    /// <summary>随机生成一个空闲端口填入端口框（1024~65535）。</summary>
+    private void OnCliRandomPort(object sender, RoutedEventArgs e)
+    {
+        if (CliPortBox == null) return;
+        var port = Random.Shared.Next(1024, 65536);
+        CliPortBox.Value = port;
+        // Value 变化会触发 OnCliPortChanged 同步到 AppSettings；若恰巧相同则手动补一次
+        if (AppSettings.CliPort != port)
+            AppSettings.CliPort = port;
     }
 
     private void UpdateCliStatus()
