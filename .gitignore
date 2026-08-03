@@ -43,6 +43,7 @@ sucaibao/
 bin/
 obj/
 publish/
+publish-fd/
 installer/Output/
 
 # Visual Studio (machine-local, NOT shared)
